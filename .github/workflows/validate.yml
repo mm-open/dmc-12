@@ -1,0 +1,44 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  schemas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli@5 ajv-formats@3
+      - name: Validate each schema compiles against JSON Schema 2020-12
+        run: |
+          set -euo pipefail
+          fail=0
+          for s in schemas/*.json; do
+            echo "--- $s"
+            ajv compile -s "$s" --spec=draft2020 --strict=false -c ajv-formats || fail=$((fail+1))
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::$fail schema(s) failed to compile"
+            exit 1
+          fi
+
+  reference-manifest:
+    runs-on: ubuntu-latest
+    needs: schemas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Structural check on the reference manifest
+        run: python3 .github/workflows/check_manifest.py

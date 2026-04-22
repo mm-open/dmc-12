@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/return-policy.json",
+  "title": "DMC-12 Return Policy Capability v0.1.0 (STUB)",
+  "description": "STUB — capability not yet implemented. Schema subject to change in v0.2.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Stub — until this capability is defined, only an empty object is accepted so validators cannot smuggle PII through an undefined surface."
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false
+    }
+  },
+  "required": ["input", "output"]
+}

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/inventory.json",
+  "title": "DMC-12 Inventory Capability v0.1.0",
+  "description": "Vehicle record schema for org.dmc12.automotive.inventory. Extends dev.ucp.shopping.catalog.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "object",
+      "description": "Discriminated union of search_inventory / list_inventory / get_vehicle_by_vin / check_availability inputs. The `tool` discriminator is required so implementations cannot accidentally route a request to the wrong capability and validators don't mis-match on overlap.",
+      "oneOf": [
+        {
+          "title": "search_inventory",
+          "type": "object",
+          "required": ["tool", "query"],
+          "additionalProperties": false,
+          "properties": {
+            "tool": {"const": "search_inventory"},
+            "query": {"type": "string", "minLength": 1, "maxLength": 500},
+            "min_year": {"type": "integer", "minimum": 1990, "maximum": 2030},
+            "max_year": {"type": "integer", "minimum": 1990, "maximum": 2030},
+            "max_price": {"type": "number", "minimum": 0, "maximum": 999999},
+            "max_mileage": {"type": "integer", "minimum": 0, "maximum": 500000},
+            "condition": {"$ref": "#/$defs/ConditionFilter"},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 25, "default": 10}
+          }
+        },
+        {
+          "title": "get_vehicle_by_vin",
+          "type": "object",
+          "required": ["tool", "vin"],
+          "additionalProperties": false,
+          "properties": {
+            "tool": {"const": "get_vehicle_by_vin"},
+            "vin": {"type": "string", "pattern": "^[A-HJ-NPR-Z0-9]{17}$"}
+          }
+        },
+        {
+          "title": "list_inventory",
+          "type": "object",
+          "required": ["tool"],
+          "additionalProperties": false,
+          "properties": {
+            "tool": {"const": "list_inventory"},
+            "year": {"type": "integer", "minimum": 1990, "maximum": 2030},
+            "make": {"type": "string", "maxLength": 40},
+            "model": {"type": "string", "maxLength": 60},
+            "trim": {"type": "string", "maxLength": 80},
+            "condition": {"$ref": "#/$defs/ConditionFilter"},
+            "min_price": {"type": "number", "minimum": 0},
+            "max_price": {"type": "number", "minimum": 0},
+            "max_mileage": {"type": "integer", "minimum": 0},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 25},
+            "offset": {"type": "integer", "minimum": 0, "default": 0}
+          }
+        },
+        {
+          "title": "check_availability",
+          "type": "object",
+          "required": ["tool", "vins"],
+          "additionalProperties": false,
+          "properties": {
+            "tool": {"const": "check_availability"},
+            "vins": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 50,
+              "items": {"type": "string", "pattern": "^[A-HJ-NPR-Z0-9]{17}$"}
+            }
+          }
+        }
+      ]
+    },
+    "output": {
+      "title": "Vehicle record",
+      "type": "object",
+      "required": ["vin", "store_code", "condition", "year", "make", "model", "asking_price", "status"],
+      "properties": {
+        "vin": {"type": "string", "pattern": "^[A-HJ-NPR-Z0-9]{17}$"},
+        "store_code": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^[A-Z0-9]{2,10}$",
+          "description": "Dealer rooftop code. SPEC §4.1 recommends three-letter uppercase (e.g. MMS, MMU); pattern allows 2–10 uppercase alphanumerics for larger store groups."
+        },
+        "stock_number": {"type": ["string", "null"]},
+        "condition": {"$ref": "#/$defs/Condition"},
+        "year": {"type": "integer", "minimum": 1990, "maximum": 2030},
+        "make": {"type": "string"},
+        "model": {"type": "string"},
+        "trim": {"type": ["string", "null"]},
+        "body_style": {"type": ["string", "null"]},
+        "exterior_color": {"type": ["string", "null"]},
+        "interior_color": {"type": ["string", "null"]},
+        "transmission": {"type": ["string", "null"]},
+        "drivetrain": {"enum": ["AWD", "FWD", "RWD", "4WD", null]},
+        "fuel_type": {"type": ["string", "null"]},
+        "mileage": {"type": ["integer", "null"], "minimum": 0},
+        "asking_price": {"type": "number", "minimum": 0},
+        "msrp": {"type": ["number", "null"], "minimum": 0},
+        "status": {"enum": ["available", "pending", "sold", "off-lot"]},
+        "days_on_lot": {"type": ["integer", "null"], "minimum": 0},
+        "stocked_date": {"type": ["string", "null"], "format": "date"},
+        "photos": {
+          "type": ["array", "null"],
+          "items": {"type": "string", "format": "uri"}
+        },
+        "description": {"type": ["string", "null"]},
+        "similarity": {
+          "description": "Only present on search_inventory responses.",
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  },
+  "required": ["input", "output"],
+  "examples": [
+    {
+      "input": {
+        "tool": "search_inventory",
+        "query": "AWD wagon under 35k",
+        "condition": "new",
+        "limit": 5
+      },
+      "output": {
+        "vin": "JF2GTHMC4P8123456",
+        "store_code": "MMS",
+        "stock_number": "S24001",
+        "condition": "new",
+        "year": 2024,
+        "make": "Subaru",
+        "model": "Outback",
+        "trim": "Premium",
+        "body_style": "Wagon",
+        "drivetrain": "AWD",
+        "fuel_type": "Gasoline",
+        "mileage": null,
+        "asking_price": 33985.00,
+        "msrp": 34215.00,
+        "status": "available",
+        "days_on_lot": 18
+      }
+    },
+    {
+      "input": {
+        "tool": "get_vehicle_by_vin",
+        "vin": "JF2GTHMC4P8123456"
+      },
+      "output": {
+        "vin": "JF2GTHMC4P8123456",
+        "store_code": "MMU",
+        "condition": "certified",
+        "year": 2022,
+        "make": "Subaru",
+        "model": "Forester",
+        "mileage": 27400,
+        "asking_price": 28995.00,
+        "status": "available"
+      }
+    }
+  ],
+  "$defs": {
+    "Condition": {
+      "description": "Canonical condition enum (SPEC.md §4.2). Applies to every vehicle record returned by the capability.",
+      "enum": ["new", "used", "certified", "rental", "demo"]
+    },
+    "ConditionFilter": {
+      "description": "Input filter enum. Includes the five canonical conditions plus `any` (wildcard) and the legacy alias `cpo` which maps to `certified`.",
+      "enum": ["new", "used", "certified", "cpo", "rental", "demo", "any"]
+    }
+  }
+}

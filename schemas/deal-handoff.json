@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/deal-handoff.json",
+  "title": "DMC-12 Deal Handoff Capability v0.1.0",
+  "description": "Input/output schema for org.dmc12.automotive.deal_handoff (initiate_deal_handoff). Only DMC-12 capability that accepts customer PII.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "object",
+      "required": [
+        "reservation_token",
+        "customer_contact",
+        "financing_preference",
+        "trade_in_disclosed",
+        "customer_consent"
+      ],
+      "properties": {
+        "reservation_token": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 80,
+          "description": "Active reservation owned by the calling agent."
+        },
+        "customer_contact": {
+          "type": "object",
+          "required": ["name", "phone", "email"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1, "maxLength": 120},
+            "phone": {
+              "type": "string",
+              "pattern": "^\\+[1-9][0-9]{6,14}$",
+              "description": "E.164 format (+15555551234)."
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 320
+            }
+          },
+          "additionalProperties": false
+        },
+        "financing_preference": {
+          "enum": ["cash", "finance", "lease", "unknown"]
+        },
+        "trade_in_disclosed": {"type": "boolean"},
+        "notes": {
+          "type": ["string", "null"],
+          "maxLength": 500,
+          "description": "Agent-provided context, e.g. 'customer is a return buyer, purchased 2022 Outback from us'."
+        },
+        "customer_consent": {
+          "const": true,
+          "description": "Customer explicitly authorized contact transfer. MUST be true — the schema rejects false so validators cannot accept a no-consent PII hand-off."
+        }
+      },
+      "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "required": ["handoff_token", "sent_to_masked", "sent_at", "status"],
+      "properties": {
+        "handoff_token": {"type": "string"},
+        "sent_to_masked": {
+          "type": "string",
+          "description": "Email address with local-part partially redacted (e.g. sa****@markmillersubaru.com)."
+        },
+        "sent_at": {"type": "string", "format": "date-time"},
+        "status": {"enum": ["sent", "acknowledged", "closed", "cancelled"]},
+        "next_steps": {"type": "string"}
+      }
+    }
+  },
+  "required": ["input", "output"],
+  "examples": [
+    {
+      "input": {
+        "reservation_token": "rsv_01HZ9QK7M3V8P2S6T4W0Y1Z3X5",
+        "customer_contact": {
+          "name": "Jane Example",
+          "phone": "+15555551234",
+          "email": "jane@example.com"
+        },
+        "financing_preference": "finance",
+        "trade_in_disclosed": true,
+        "notes": "Customer prefers Saturday pickup.",
+        "customer_consent": true
+      },
+      "output": {
+        "handoff_token": "hdo_01HZ9QNB6Y4W9X3K7M2S1T0V8Z",
+        "sent_to_masked": "sa****@dealer.example",
+        "sent_at": "2026-04-21T18:10:00Z",
+        "status": "sent",
+        "next_steps": "A sales manager will call the customer within 30 minutes."
+      }
+    }
+  ]
+}

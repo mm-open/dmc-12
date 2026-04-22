@@ -1,0 +1,87 @@
+{
+  "ucp": {
+    "version": "2026-01-11",
+    "services": {
+      "dev.ucp.shopping": {
+        "version": "2026-01-11",
+        "spec": "https://ucp.dev/specs/shopping",
+        "mcp": {
+          "endpoint": "https://mcp.dealer.example/mcp/"
+        },
+        "a2a": {
+          "endpoint": "https://mcp.dealer.example/a2a/",
+          "agent_card": "https://mcp.dealer.example/.well-known/agent-card.json"
+        }
+      },
+      "org.dmc12.automotive": {
+        "version": "0.1.0",
+        "spec": "https://github.com/mm-open/dmc-12/blob/main/SPEC.md",
+        "mcp": {
+          "endpoint": "https://mcp.dealer.example/mcp/"
+        },
+        "a2a": {
+          "endpoint": "https://mcp.dealer.example/a2a/"
+        }
+      }
+    },
+    "capabilities": [
+      {
+        "name": "dev.ucp.shopping.catalog",
+        "version": "2026-01-11",
+        "spec": "https://ucp.dev/specs/shopping/catalog"
+      },
+      {
+        "name": "org.dmc12.automotive.inventory",
+        "version": "0.1.0",
+        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/inventory.md",
+        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/inventory.json",
+        "extends": "dev.ucp.shopping.catalog"
+      },
+      {
+        "name": "org.dmc12.automotive.quote",
+        "version": "0.1.0",
+        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/quote.md",
+        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/quote.json"
+      },
+      {
+        "name": "org.dmc12.automotive.reservation",
+        "version": "0.1.0",
+        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/reservation.md",
+        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/reservation.json"
+      },
+      {
+        "name": "org.dmc12.automotive.deal_handoff",
+        "version": "0.1.0",
+        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/deal-handoff.md",
+        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/deal-handoff.json"
+      }
+    ]
+  },
+  "merchant": {
+    "name": "Mark Miller Subaru",
+    "brand": "Subaru",
+    "locations": [
+      {"store_code": "MMS", "display_name": "Mark Miller Subaru Midtown"},
+      {"store_code": "MMU", "display_name": "Mark Miller Subaru South Towne"}
+    ],
+    "contact": {
+      "website": "https://www.markmillersubaru.com",
+      "support_email": "mm_reports@mmsubaru.com"
+    },
+    "inventory_accuracy": {
+      "freshness_sla_seconds": 3600,
+      "source": "dealership DMS via scheduled sync"
+    }
+  },
+  "payment": {
+    "handlers": []
+  },
+  "policies": {
+    "negotiation": "none — all transactions at listed asking_price",
+    "quote_ttl_seconds": 1800,
+    "reservation_ttl_seconds": 1800,
+    "pii": "opaque refs only — exception: deal_handoff accepts customer PII with explicit consent",
+    "audit": "every agent call logged for 90 days",
+    "return_policy": "per dealer policy — not exposed via agent tools in v1"
+  }
+}
