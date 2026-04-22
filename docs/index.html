@@ -735,8 +735,8 @@
 
     <div class="endpoint" id="heroEndpoint">
       <span class="label mono">MCP&nbsp;URL</span>
-      <div class="url mono" id="heroUrl">https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp</div>
-      <button class="copy mono" data-copy="https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp">Copy</button>
+      <div class="url mono" id="heroUrl" data-mcp-path="/mcp" data-mcp-role="text"></div>
+      <button class="copy mono" data-mcp-path="/mcp" data-mcp-role="copy">Copy</button>
     </div>
 
     <div class="cta-row">
@@ -905,10 +905,10 @@
 
         <div class="cta-area">
           <div class="mini-endpoint">
-            <div class="url mono">https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp</div>
-            <button class="mono" data-copy="https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp">Copy</button>
+            <div class="url mono" data-mcp-path="/mcp" data-mcp-role="text"></div>
+            <button class="mono" data-mcp-path="/mcp" data-mcp-role="copy">Copy</button>
           </div>
-          <a class="btn primary" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp" style="width:100%; justify-content:center;">Copy MCP URL into your client <span class="arr">→</span></a>
+          <a class="btn primary" data-mcp-path="/mcp" data-mcp-role="href" style="width:100%; justify-content:center;">Copy MCP URL into your client <span class="arr">→</span></a>
           <p class="note">Paste the URL into your AI client's connector settings. Authentication is automatic — DCR&nbsp;+&nbsp;PKCE, open registration. You'll see a one-screen Auth0 consent for <span class="mono">inventory:read</span> on <span class="mono">mmbrain-prod.us.auth0.com</span> and you're live. No account to create, no key to manage.</p>
         </div>
       </div>
@@ -966,7 +966,7 @@
           Agent Card
           <span class="hint">A2A v1.0 — signed JWS over JCS canonicalization</span>
         </div>
-        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/agent-card.json" target="_blank" rel="noopener">
+        <a class="url" data-mcp-path="/.well-known/agent-card.json" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/agent-card.json
         </a>
       </div>
@@ -975,7 +975,7 @@
           MCP server card
           <span class="hint">SEP-1960 — endpoints, scopes, auth methods</span>
         </div>
-        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/mcp" target="_blank" rel="noopener">
+        <a class="url" data-mcp-path="/.well-known/mcp" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/mcp
         </a>
       </div>
@@ -984,7 +984,7 @@
           UCP manifest
           <span class="hint">UCP v1 — merchant, capabilities, freshness SLA</span>
         </div>
-        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/ucp" target="_blank" rel="noopener">
+        <a class="url" data-mcp-path="/.well-known/ucp" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/ucp
         </a>
       </div>
@@ -993,7 +993,7 @@
           Protected-resource metadata
           <span class="hint">RFC 9728 — resource, authorization servers, scopes</span>
         </div>
-        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/oauth-protected-resource" target="_blank" rel="noopener">
+        <a class="url" data-mcp-path="/.well-known/oauth-protected-resource" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/oauth-protected-resource
         </a>
       </div>
@@ -1002,7 +1002,7 @@
           Agent Card JWKS
           <span class="hint">Public key for Agent Card signature verification</span>
         </div>
-        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/jwks.json" target="_blank" rel="noopener">
+        <a class="url" data-mcp-path="/.well-known/jwks.json" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/jwks.json
         </a>
       </div>
@@ -1056,9 +1056,9 @@
       <h4>Build</h4>
       <ul>
         <li><a href="https://github.com/mm-open/dmc-12" target="_blank" rel="noopener">github.com/mm-open/dmc-12</a></li>
-        <li><a href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/mcp" target="_blank" rel="noopener">MCP server card</a></li>
-        <li><a href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/agent-card.json" target="_blank" rel="noopener">Agent Card</a></li>
-        <li><a href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/ucp" target="_blank" rel="noopener">UCP manifest</a></li>
+        <li><a data-mcp-path="/.well-known/mcp" data-mcp-role="href" target="_blank" rel="noopener">MCP server card</a></li>
+        <li><a data-mcp-path="/.well-known/agent-card.json" data-mcp-role="href" target="_blank" rel="noopener">Agent Card</a></li>
+        <li><a data-mcp-path="/.well-known/ucp" data-mcp-role="href" target="_blank" rel="noopener">UCP manifest</a></li>
       </ul>
     </div>
     <div class="col">
@@ -1079,6 +1079,21 @@
 
 <script>
 (function () {
+  // Single source of truth for the public MCP endpoint origin. Update this
+  // value in one place when the vanity CNAME (e.g. ucp.markmillersubaru.com)
+  // takes over from the dev Cloud Run URL. Every href/data-copy/display on
+  // this page that points at the service is rendered from MCP_BASE + the
+  // per-element data-mcp-path attribute.
+  var MCP_BASE = 'https://mm-inventory-mcp-572952183767.us-central1.run.app';
+
+  document.querySelectorAll('[data-mcp-path]').forEach(function (el) {
+    var full = MCP_BASE + el.getAttribute('data-mcp-path');
+    var role = el.getAttribute('data-mcp-role') || '';
+    if (role.indexOf('href') !== -1) el.setAttribute('href', full);
+    if (role.indexOf('copy') !== -1) el.setAttribute('data-copy', full);
+    if (role.indexOf('text') !== -1) el.textContent = full;
+  });
+
   var toast = document.getElementById('toast');
   var toastTimer;
   function flashToast(msg) {
