@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.mm-open/inventory-mcp",
+  "description": "Mark Miller Subaru — live inventory, VIN lookup, 30-min quotes via MCP. DMC-12 reference.",
+  "repository": {
+    "url": "https://github.com/mm-open/dmc-12",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp"
+    }
+  ],
+  "websiteUrl": "https://mm-open.github.io/dmc-12/"
+}

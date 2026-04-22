@@ -2,6 +2,10 @@
 
 **Automotive extensions to the [Universal Commerce Protocol (UCP)](https://developers.googleblog.com/en/under-the-hood-universal-commerce-protocol-ucp/).**
 
+> 🌐 **Live reference implementation at Mark Miller Subaru** — landing page at
+> **[mm-open.github.io/dmc-12](https://mm-open.github.io/dmc-12/)** with connect
+> buttons for Claude / ChatGPT / Gemini and a partner-onboarding contact.
+
 DMC-12 defines the capabilities a dealership agent surface needs that the
 UCP core does not cover: VIN-level inventory, asking-price quotes, soft
 reservations, deal hand-off to a human sales manager, and (forthcoming) the
@@ -9,10 +13,28 @@ out-the-door pricing, trade-in intake, test-drive scheduling, F&I menu, and
 return-policy extensions that make retail vehicle commerce distinct from
 physical-goods checkout.
 
+- **Landing page:** <https://mm-open.github.io/dmc-12/>
 - **Spec:** [`SPEC.md`](./SPEC.md)
 - **Capabilities:** [`capabilities/`](./capabilities/)
 - **JSON Schemas (2020-12):** [`schemas/`](./schemas/)
 - **Reference manifest (Mark Miller Subaru):** [`examples/markmiller-manifest.json`](./examples/markmiller-manifest.json)
+- **MCP Registry manifest:** [`server.json`](./server.json)
+
+## Try it (as an AI agent)
+
+The Mark Miller Subaru endpoint is live and discoverable through the MCP spec:
+
+| Well-known | URL |
+|---|---|
+| MCP server card (SEP-1960) | <https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/mcp> |
+| A2A Agent Card (signed) | <https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/agent-card.json> |
+| UCP manifest | <https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/ucp> |
+| RFC 9728 Protected Resource Metadata | <https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/oauth-protected-resource> |
+| Agent Card JWKS | <https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/jwks.json> |
+
+Paste `https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp` into
+any OAuth-capable MCP client (Claude, Cursor, ChatGPT Connectors, Gemini)
+and it will discover the rest automatically via DCR + PKCE.
 
 ## Relationship to UCP
 
