@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mark Miller Subaru — MCP / A2A / UCP endpoint</title>
+<meta name="description" content="The first dealership you can talk to as an AI agent. Public MCP endpoint, signed A2A Agent Card, and UCP v1 manifest." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f7f7f5;
+    --ink: #111111;
+    --ink-soft: #4a4a48;
+    --ink-mute: #78786f;
+    --line: #e6e5e0;
+    --line-strong: #cfcec6;
+    --accent: #1537a6;       /* confident deep blue, original (not brand-copied) */
+    --accent-ink: #0e256e;
+    --accent-soft: #eef1fb;
+    --ok: #0a6b3a;
+    --code-bg: #0e0e0d;
+    --code-ink: #e8e6de;
+    --code-mute: #8a8a7f;
+    --maxw: 1080px;
+    --pad: 28px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-feature-settings: "zero" 1, "ss01" 1; }
+  a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  a:hover { color: var(--accent); }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+  /* Top strip */
+  .strip {
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+  }
+  .strip-inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 14px var(--pad);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+  .strip .brand {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .strip .brand .glyph {
+    width: 22px; height: 22px; border-radius: 4px;
+    background: var(--ink); color: #fff;
+    display: grid; place-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .strip .meta {
+    color: var(--ink-mute);
+    display: flex; gap: 18px; align-items: center;
+  }
+  .strip .meta .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: #19b36a; margin-right: 7px; vertical-align: middle;
+    box-shadow: 0 0 0 3px rgba(25,179,106,.15);
+  }
+  .strip .meta .sep { color: var(--line-strong); }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad); }
+  section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: 0; }
+
+  /* Hero */
+  .hero { padding: 96px 0 80px; }
+  .hero .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; letter-spacing: 0.02em;
+    color: var(--ink-mute);
+    margin-bottom: 28px;
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  .hero .kicker .tag {
+    border: 1px solid var(--line-strong);
+    padding: 3px 8px; border-radius: 999px;
+    background: var(--bg-soft);
+    color: var(--ink-soft);
+  }
+  .hero h1 {
+    font-size: clamp(34px, 5.4vw, 60px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+    margin: 0 0 22px;
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .hero .lede {
+    font-size: 18px; line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 58ch;
+    margin: 0 0 40px;
+  }
+
+  /* Endpoint block */
+  .endpoint {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    overflow: hidden;
+  }
+  .endpoint .label {
+    color: var(--code-mute);
+    user-select: none;
+    font-size: 12px;
+  }
+  .endpoint .url {
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: thin;
+  }
+  .endpoint .url::-webkit-scrollbar { height: 6px; }
+  .endpoint .url::-webkit-scrollbar-thumb { background: #2b2b29; border-radius: 6px; }
+  .endpoint button.copy {
+    background: #1d1d1c;
+    color: var(--code-ink);
+    border: 1px solid #2f2f2c;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  .endpoint button.copy:hover { background: #2a2a28; border-color: #3b3b37; }
+  .endpoint button.copy.copied { color: #67e19a; border-color: #1b4633; background: #0d1e16; }
+
+  /* Hero CTA row */
+  .cta-row {
+    margin-top: 28px;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 18px;
+    border-radius: 7px;
+    font-weight: 500;
+    font-size: 14px;
+    text-decoration: none;
+    border: 1px solid var(--line-strong);
+    background: var(--bg);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .btn:hover { border-color: var(--ink); }
+  .btn.primary {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+  .btn.primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn .arr {
+    font-family: 'JetBrains Mono', monospace;
+    opacity: .7;
+    transition: transform .15s, opacity .15s;
+  }
+  .btn:hover .arr { transform: translateX(2px); opacity: 1; }
+
+  /* Diagram */
+  .diagram {
+    margin-top: 64px;
+    padding: 36px 28px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--bg-soft);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 20px;
+    align-items: center;
+  }
+  .diagram .node {
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--bg);
+  }
+  .diagram .node .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .diagram .node .ttl {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+  .diagram .node .sub {
+    font-size: 12px;
+    color: var(--ink-mute);
+    line-height: 1.45;
+  }
+  .diagram .arrow {
+    position: relative;
+    text-align: center;
+  }
+  .diagram .arrow-line {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: var(--line-strong);
+    position: relative;
+  }
+  .diagram .arrow-line::after {
+    content: '';
+    position: absolute;
+    right: -1px; top: 50%;
+    width: 7px; height: 7px;
+    border-right: 1px solid var(--ink-soft);
+    border-top: 1px solid var(--ink-soft);
+    transform: translateY(-50%) rotate(45deg);
+  }
+  .diagram .arrow-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    padding: 2px 6px;
+    background: var(--bg-soft);
+    position: absolute;
+    top: -8px; left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  /* Section headers */
+  .sec-head {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 28px;
+    margin-bottom: 40px;
+    align-items: baseline;
+  }
+  .sec-head .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+  }
+  .sec-head h2 {
+    font-size: clamp(26px, 3.4vw, 34px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .sec-head .sub {
+    color: var(--ink-mute);
+    font-size: 14px;
+    margin-top: 8px;
+    max-width: 60ch;
+  }
+
+  /* Explainer */
+  .explainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .explainer .item {
+    background: var(--bg);
+    padding: 28px 24px;
+  }
+  .explainer .item .acr {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  .explainer .item .name {
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .explainer .item .txt {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  /* Tools */
+  .tools {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .tool {
+    background: var(--bg);
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 148px;
+  }
+  .tool .scope {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tool .scope .pip {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--line-strong);
+  }
+  .tool.read .scope .pip { background: #19b36a; }
+  .tool.write .scope .pip { background: var(--accent); }
+  .tool.handoff .scope .pip { background: #c2410c; }
+  .tool .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+    word-break: break-word;
+  }
+  .tool .desc {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-top: auto;
+  }
+  .tools-legend {
+    margin-top: 16px;
+    display: flex; gap: 22px; flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.02em;
+  }
+  .tools-legend .lg { display: inline-flex; gap: 7px; align-items: center; }
+  .tools-legend .pip { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Tracks */
+  .tracks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .track {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px 30px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+  .track.consumer { background: var(--bg); }
+  .track.partner {
+    background: var(--bg-soft);
+    border-color: var(--line-strong);
+  }
+  .track .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .track .eyebrow .idx {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    background: var(--ink);
+    color: #fff;
+    display: grid; place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .track.partner .eyebrow .idx { background: var(--accent); }
+  .track h3 {
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .track .who {
+    color: var(--ink-mute);
+    font-size: 13.5px;
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+  .track ul.feats {
+    list-style: none;
+    margin: 0 0 24px;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .track ul.feats li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    align-items: start;
+  }
+  .track ul.feats li .chk {
+    margin-top: 6px;
+    width: 10px; height: 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    background: var(--bg);
+    position: relative;
+  }
+  .track.consumer ul.feats li .chk::after {
+    content: '';
+    position: absolute; inset: 1px;
+    background: #19b36a;
+    border-radius: 1px;
+  }
+  .track.partner ul.feats li .chk::after {
+    content: '';
+    position: absolute; inset: 1px;
+    background: var(--accent);
+    border-radius: 1px;
+  }
+  .track .scopes {
+    margin: 0 0 22px;
+    padding: 14px 16px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 8px;
+    background: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  .track .scopes .k {
+    color: var(--ink-mute);
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+  .track .scopes .chip {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    margin: 2px 4px 2px 0;
+    font-size: 11.5px;
+  }
+  .track .cta-area {
+    margin-top: auto;
+  }
+  .track .mini-endpoint {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .track .mini-endpoint .url {
+    overflow-x: auto; white-space: nowrap; scrollbar-width: thin;
+  }
+  .track .mini-endpoint .url::-webkit-scrollbar { height: 5px; }
+  .track .mini-endpoint .url::-webkit-scrollbar-thumb { background: #2b2b29; border-radius: 6px; }
+  .track .mini-endpoint button {
+    background: #1d1d1c; color: var(--code-ink);
+    border: 1px solid #2f2f2c; padding: 5px 10px;
+    border-radius: 5px; font-family: inherit; font-size: 11px;
+    cursor: pointer;
+  }
+  .track .mini-endpoint button.copied { color: #67e19a; border-color: #1b4633; background: #0d1e16; }
+  .track .note {
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+
+  /* Verify */
+  .verify-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .verify-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    align-items: start;
+  }
+  .verify-row .what {
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+  }
+  .verify-row .what .hint {
+    display: block;
+    font-weight: 400;
+    color: var(--ink-mute);
+    font-size: 12px;
+    margin-top: 3px;
+  }
+  .verify-row a.url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--accent-ink);
+    word-break: break-all;
+    text-decoration: none;
+    line-height: 1.5;
+  }
+  .verify-row a.url:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Fork */
+  .fork {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+  }
+  .fork h3 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+  .fork p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 56ch;
+  }
+  .fork .mono-repo {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Footer */
+  footer {
+    padding: 56px 0 40px;
+    background: var(--bg-soft);
+    border-top: 1px solid var(--line);
+  }
+  footer .wrap {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 36px;
+  }
+  footer .col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 14px;
+    font-weight: 500;
+  }
+  footer .col ul { list-style: none; margin: 0; padding: 0; }
+  footer .col li { margin-bottom: 9px; font-size: 13.5px; }
+  footer .col a { color: var(--ink); text-decoration: none; }
+  footer .col a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  footer .col .muted { color: var(--ink-mute); font-size: 12.5px; }
+  footer .brand-line {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 14px;
+  }
+  footer .brand-line .glyph {
+    width: 22px; height: 22px; border-radius: 4px;
+    background: var(--ink); color: #fff;
+    display: grid; place-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+  }
+  footer .brand-line .name { font-weight: 600; font-size: 14px; }
+  footer .about {
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.55;
+    max-width: 42ch;
+  }
+  footer .fine {
+    border-top: 1px solid var(--line);
+    margin-top: 40px;
+    padding-top: 20px;
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    line-height: 1.55;
+    max-width: 80ch;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 50;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 980px) {
+    .tools { grid-template-columns: repeat(2, 1fr); }
+    .verify-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    :root { --pad: 20px; }
+    section { padding: 56px 0; }
+    .hero { padding: 64px 0 48px; }
+    .sec-head { grid-template-columns: 1fr; gap: 10px; }
+    .explainer { grid-template-columns: 1fr; }
+    .tracks { grid-template-columns: 1fr; }
+    .diagram { grid-template-columns: 1fr; padding: 24px 20px; }
+    .diagram .arrow { height: 30px; }
+    .diagram .arrow-line { width: 1px; height: 100%; margin: 0 auto; }
+    .diagram .arrow-line::after {
+      right: 50%; top: auto; bottom: -1px;
+      transform: translateX(50%) rotate(135deg);
+    }
+    .verify-row { grid-template-columns: 1fr; gap: 8px; }
+    .fork { grid-template-columns: 1fr; }
+    footer .wrap { grid-template-columns: 1fr 1fr; }
+    .endpoint { grid-template-columns: 1fr; }
+    .endpoint .label { display: none; }
+    .strip-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STRIP -->
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <span class="glyph">MM</span>
+      <span>Mark&nbsp;Miller&nbsp;Subaru</span>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>spec 2025-11-25</span>
+      <span class="sep">·</span>
+      <span>UCP v1</span>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="kicker">
+      <span class="tag">SLC, Utah</span>
+      <span>First dealership in North America with a public MCP + A2A + UCP surface.</span>
+    </div>
+    <h1>The first dealership you can <em>talk to as an AI agent.</em></h1>
+    <p class="lede">
+      One production endpoint. Real inventory. Real 30&#8209;minute quotes, real soft holds, real hand&#8209;off to a live sales manager. Connect from Claude, ChatGPT, Gemini, or your own agent — or wire it straight into your partner stack.
+    </p>
+
+    <div class="endpoint" id="heroEndpoint">
+      <span class="label mono">MCP&nbsp;URL</span>
+      <div class="url mono" id="heroUrl">https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp</div>
+      <button class="copy mono" data-copy="https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp">Copy</button>
+    </div>
+
+    <div class="cta-row">
+      <a class="btn primary" href="#consumer">For consumer AI users <span class="arr">→</span></a>
+      <a class="btn" href="#partner">For B2B partners <span class="arr">→</span></a>
+      <a class="btn" href="#verify" style="border-color: transparent;">Verify us <span class="arr">→</span></a>
+    </div>
+
+    <!-- Diagram -->
+    <div class="diagram" aria-label="Agent calling MM inventory diagram">
+      <div class="node">
+        <div class="eyebrow">Agent</div>
+        <div class="ttl">Claude · ChatGPT · Gemini · your stack</div>
+        <div class="sub">Authenticates via Auth0 (DCR&nbsp;+&nbsp;PKCE for public, client credentials for partners).</div>
+      </div>
+      <div class="arrow">
+        <span class="arrow-line"></span>
+        <span class="arrow-lbl mono">JSON-RPC 2.0 · MCP / A2A</span>
+      </div>
+      <div class="node">
+        <div class="eyebrow">Endpoint</div>
+        <div class="ttl">mm-inventory-mcp · Cloud Run</div>
+        <div class="sub">8 tools. Scope-gated. 60&nbsp;RPM burst. 90-day audit trail.</div>
+      </div>
+      <div class="arrow">
+        <span class="arrow-line"></span>
+        <span class="arrow-lbl mono">hourly sync</span>
+      </div>
+      <div class="node">
+        <div class="eyebrow">Source of truth</div>
+        <div class="ttl">MM live inventory</div>
+        <div class="sub">mm_inventory.vehicles — asking price, status, VINs, photos. Freshness&nbsp;≤&nbsp;3600s.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPLAINER -->
+<section id="what">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="num">01 / What's happening here</div>
+      </div>
+      <div>
+        <h2>Three open protocols. One dealership behind them.</h2>
+        <p class="sub">If you're not a protocol person: MCP lets an agent use our tools. A2A lets two agents speak directly. UCP lets a merchant publish what they sell and how an agent can transact. We speak all three.</p>
+      </div>
+    </div>
+
+    <div class="explainer">
+      <div class="item">
+        <div class="acr">MCP</div>
+        <div class="name">Model Context Protocol</div>
+        <div class="txt">An open wire protocol for AI agents to discover and call tools on remote servers — the same rail Claude, ChatGPT, and Gemini speak.</div>
+      </div>
+      <div class="item">
+        <div class="acr">A2A&nbsp;v1.0</div>
+        <div class="name">Agent-to-Agent</div>
+        <div class="txt">A signed Agent Card at a canonical URL that lets another agent verify who we are and what we'll do, before the first request.</div>
+      </div>
+      <div class="item">
+        <div class="acr">UCP&nbsp;v1</div>
+        <div class="name">Universal Commerce Protocol</div>
+        <div class="txt">A manifest describing what a merchant sells, how fresh inventory is, and which capabilities (quote, reserve, hand-off) are safe for an agent to call.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section id="tools">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="num">02 / Tool inventory</div>
+      </div>
+      <div>
+        <h2>Eight tools. Scope-gated. No negotiation — every quote is at asking price.</h2>
+        <p class="sub">Public (consumer) agents see the four read tools. Named partners see all eight. The tool catalog returned by <span class="mono">tools/list</span> is filtered by caller class at the server.</p>
+      </div>
+    </div>
+
+    <div class="tools">
+      <div class="tool read">
+        <div class="scope"><span class="pip"></span>inventory:read</div>
+        <div class="name">search_inventory</div>
+        <div class="desc">Semantic search over MM inventory, ranked by cosine similarity. Up to 25 results with public fields.</div>
+      </div>
+      <div class="tool read">
+        <div class="scope"><span class="pip"></span>inventory:read</div>
+        <div class="name">get_vehicle_by_vin</div>
+        <div class="desc">Look up one vehicle by VIN. Returns public fields and a found flag.</div>
+      </div>
+      <div class="tool read">
+        <div class="scope"><span class="pip"></span>inventory:read</div>
+        <div class="name">check_availability</div>
+        <div class="desc">Batch status check for up to 50 VINs — available, reserved, sold, pending, in_transit.</div>
+      </div>
+      <div class="tool read">
+        <div class="scope"><span class="pip"></span>inventory:read</div>
+        <div class="name">list_inventory</div>
+        <div class="desc">Structured-filter paginated listing — year, make, model, trim, price window, mileage cap.</div>
+      </div>
+      <div class="tool write">
+        <div class="scope"><span class="pip"></span>quote:write</div>
+        <div class="name">request_quote</div>
+        <div class="desc">Issue a 30-minute quote at the listed asking price. No parameter accepts a proposed price.</div>
+      </div>
+      <div class="tool write">
+        <div class="scope"><span class="pip"></span>reservation:write</div>
+        <div class="name">create_reservation</div>
+        <div class="desc">Convert an open quote into a 30-minute soft hold. Non-binding. One active hold per VIN.</div>
+      </div>
+      <div class="tool write">
+        <div class="scope"><span class="pip"></span>reservation:write</div>
+        <div class="name">release_reservation</div>
+        <div class="desc">Release a reservation you own. Idempotent — safe to call twice.</div>
+      </div>
+      <div class="tool write">
+        <div class="scope"><span class="pip"></span>reservation:write</div>
+        <div class="name">get_reservation_status</div>
+        <div class="desc">Look up the current state of a reservation your agent created.</div>
+      </div>
+    </div>
+
+    <div class="tools-legend">
+      <span class="lg"><span class="pip" style="background:#19b36a;"></span>read · public&nbsp;+&nbsp;partner</span>
+      <span class="lg"><span class="pip" style="background: var(--accent);"></span>write · partner only</span>
+      <span class="lg"><span class="pip" style="background:#c2410c;"></span>hand-off · partner only · PII-accepting</span>
+    </div>
+
+    <p style="margin-top: 22px; font-size: 13px; color: var(--ink-mute); line-height: 1.6;">
+      A ninth tool — <span class="mono">initiate_deal_handoff</span> (scope <span class="mono">deal:handoff</span>, PII-accepting, emits a signed email to a live sales manager) — is available to internal and named-partner agents only. Not exposed on the public rail. Ask us about it in the partner track below.
+    </p>
+  </div>
+</section>
+
+<!-- TRACKS -->
+<section id="tracks">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="num">03 / Two tracks</div>
+      </div>
+      <div>
+        <h2>Pick the path that fits.</h2>
+        <p class="sub">One endpoint, two authentication rails, two trust models. Consumer agents read. Named partners transact.</p>
+      </div>
+    </div>
+
+    <div class="tracks">
+
+      <!-- CONSUMER -->
+      <div class="track consumer" id="consumer">
+        <div class="eyebrow"><span class="idx">1</span>Consumer AI users</div>
+        <h3>Shop MM from your AI.</h3>
+        <p class="who">For anyone in Claude.ai, Claude Code, Cursor, ChatGPT Connectors, or Gemini who wants their agent to shop real vehicles at Mark Miller Subaru live.</p>
+
+        <ul class="feats">
+          <li><span class="chk"></span><div><strong>Search real inventory</strong> — semantic or structured. Filter by year, price, mileage, trim.</div></li>
+          <li><span class="chk"></span><div><strong>Check price &amp; availability</strong> by VIN. Batch up to 50 at a time.</div></li>
+          <li><span class="chk"></span><div><strong>Ask for a 30-minute quote</strong> at the listed asking price (no negotiation — it's the real number).</div></li>
+          <li><span class="chk"></span><div><strong>Request a call-back</strong> from a live Mark Miller sales manager when you're ready to talk.</div></li>
+        </ul>
+
+        <div class="cta-area">
+          <div class="mini-endpoint">
+            <div class="url mono">https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp</div>
+            <button class="mono" data-copy="https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp">Copy</button>
+          </div>
+          <a class="btn primary" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/mcp" style="width:100%; justify-content:center;">Copy MCP URL into your client <span class="arr">→</span></a>
+          <p class="note">Paste the URL into your AI client's connector settings. Authentication is automatic — DCR&nbsp;+&nbsp;PKCE, open registration. You'll see a one-screen Auth0 consent for <span class="mono">inventory:read</span> on <span class="mono">mmbrain-prod.us.auth0.com</span> and you're live. No account to create, no key to manage.</p>
+        </div>
+      </div>
+
+      <!-- PARTNER -->
+      <div class="track partner" id="partner">
+        <div class="eyebrow"><span class="idx">2</span>Named B2B partners</div>
+        <h3>For Cox, Dealer.com, CDK, and brokers.</h3>
+        <p class="who">A signed Agent Card, full write surface, per-partner rate limits, 90-day audit trail, and a direct line to Ben Reuling, our technical owner.</p>
+
+        <ul class="feats">
+          <li><span class="chk"></span><div><strong>Signed A2A v1.0 Agent Card</strong> — JWS over JCS-canonicalized payload, verifiable against our public JWKS.</div></li>
+          <li><span class="chk"></span><div><strong>Full 8-tool surface</strong> — read, quote, reservation, plus <span class="mono">initiate_deal_handoff</span> on request.</div></li>
+          <li><span class="chk"></span><div><strong>Quote / reservation semantics</strong> — 30-min TTL, non-binding soft holds, idempotent release, per-agent reservation budget.</div></li>
+          <li><span class="chk"></span><div><strong>90-day audit trail</strong> with trace IDs surfaced on every envelope — correlate incidents against <span class="mono">mm_inventory.audit_log</span>.</div></li>
+          <li><span class="chk"></span><div><strong>Per-partner rate limits</strong> tuned in <span class="mono">mm_inventory.agents</span>. Default 60&nbsp;RPM burst; higher tiers on request.</div></li>
+        </ul>
+
+        <div class="scopes">
+          <span class="k">scopes you can request</span>
+          <span class="chip">inventory:read</span>
+          <span class="chip">quote:write</span>
+          <span class="chip">reservation:write</span>
+          <span class="chip">deal:handoff</span>
+        </div>
+
+        <div class="cta-area">
+          <a class="btn primary" href="mailto:benr@mmsubaru.com?subject=MCP%20partner%20onboarding" style="width:100%; justify-content:center; background: var(--accent); border-color: var(--accent);">
+            Email Ben to onboard <span class="arr">→</span>
+          </a>
+          <p class="note">We'll issue you an Auth0 M2M client on <span class="mono">mmbrain-prod.us.auth0.com</span> (audience&nbsp;<span class="mono">mm-inventory-mcp</span>), seed a row in <span class="mono">mm_inventory.agents</span>, and point you at the partner onboarding guide. Typical turnaround: same day.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- VERIFY -->
+<section id="verify">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="num">04 / Verify us</div>
+      </div>
+      <div>
+        <h2>Don't trust us. Check the well-knowns.</h2>
+        <p class="sub">Every claim on this page is backed by a public document at a canonical URL. All four are unauthenticated, cacheable, and safe to fetch programmatically.</p>
+      </div>
+    </div>
+
+    <div class="verify-grid">
+      <div class="verify-row">
+        <div class="what">
+          Agent Card
+          <span class="hint">A2A v1.0 — signed JWS over JCS canonicalization</span>
+        </div>
+        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/agent-card.json" target="_blank" rel="noopener">
+          /.well-known/agent-card.json
+        </a>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          MCP server card
+          <span class="hint">SEP-1960 — endpoints, scopes, auth methods</span>
+        </div>
+        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/mcp" target="_blank" rel="noopener">
+          /.well-known/mcp
+        </a>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          UCP manifest
+          <span class="hint">UCP v1 — merchant, capabilities, freshness SLA</span>
+        </div>
+        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/ucp" target="_blank" rel="noopener">
+          /.well-known/ucp
+        </a>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          Protected-resource metadata
+          <span class="hint">RFC 9728 — resource, authorization servers, scopes</span>
+        </div>
+        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/oauth-protected-resource" target="_blank" rel="noopener">
+          /.well-known/oauth-protected-resource
+        </a>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          Agent Card JWKS
+          <span class="hint">Public key for Agent Card signature verification</span>
+        </div>
+        <a class="url" href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/jwks.json" target="_blank" rel="noopener">
+          /.well-known/jwks.json
+        </a>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          Open spec (source)
+          <span class="hint">DMC-12 capability spec + reference materials</span>
+        </div>
+        <a class="url" href="https://github.com/mm-open/dmc-12" target="_blank" rel="noopener">
+          github.com/mm-open/dmc-12
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FORK -->
+<section id="fork">
+  <div class="wrap">
+    <div class="fork">
+      <div>
+        <h3>Built for your dealership too.</h3>
+        <p>Run another store? The whole stack is an open spec. Fork <span class="mono-repo">mm-open/dmc-12</span>, point it at your inventory source, and publish your own MCP&nbsp;+&nbsp;A2A&nbsp;+&nbsp;UCP surface. We'll help.</p>
+      </div>
+      <a class="btn primary" href="https://github.com/mm-open/dmc-12" target="_blank" rel="noopener">
+        Fork the spec <span class="arr">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="col">
+      <div class="brand-line">
+        <span class="glyph">MM</span>
+        <span class="name">Mark Miller Subaru</span>
+      </div>
+      <p class="about">Independent multi-store dealer group in Salt Lake City. We built our MCP&nbsp;+&nbsp;A2A&nbsp;+&nbsp;UCP surface in-house on FastAPI + Cloud Run because we thought someone should go first.</p>
+    </div>
+    <div class="col">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="mailto:benr@mmsubaru.com">benr@mmsubaru.com</a></li>
+        <li><a href="mailto:mm_reports@mmsubaru.com">mm_reports@mmsubaru.com</a><br><span class="muted">incident &amp; trace lookup</span></li>
+        <li><a href="https://www.linkedin.com/company/mark-miller-subaru/" target="_blank" rel="noopener">LinkedIn</a></li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Build</h4>
+      <ul>
+        <li><a href="https://github.com/mm-open/dmc-12" target="_blank" rel="noopener">github.com/mm-open/dmc-12</a></li>
+        <li><a href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/mcp" target="_blank" rel="noopener">MCP server card</a></li>
+        <li><a href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/agent-card.json" target="_blank" rel="noopener">Agent Card</a></li>
+        <li><a href="https://mm-inventory-mcp-572952183767.us-central1.run.app/.well-known/ucp" target="_blank" rel="noopener">UCP manifest</a></li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Legal</h4>
+      <ul>
+        <li><span class="muted">Terms — coming; <a href="mailto:benr@mmsubaru.com">email</a> for now</span></li>
+        <li><span class="muted">Privacy — coming; <a href="mailto:benr@mmsubaru.com">email</a> for now</span></li>
+      </ul>
+    </div>
+
+    <div class="fine" style="grid-column: 1 / -1;">
+      Mark Miller Subaru is an independent retailer. Subaru, the Subaru logo, and all model names are trademarks of Subaru Corporation; this page and the <span class="mono">mm-open/dmc-12</span> open spec are not endorsed by, sponsored by, or affiliated with Subaru of America or Subaru Corporation. Inventory data served by the endpoint described here is furnished for informational use by AI agents; pricing, availability, and terms are non-binding until confirmed in writing by a Mark Miller sales manager. © 2026 Mark Miller Subaru.
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast">copied</div>
+
+<script>
+(function () {
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  function flashToast(msg) {
+    toast.textContent = msg || 'copied';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1400);
+  }
+
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var val = btn.getAttribute('data-copy');
+      var done = function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        flashToast('Copied to clipboard');
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(val).then(done, function () {
+          // fallback
+          var ta = document.createElement('textarea');
+          ta.value = val; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          document.body.removeChild(ta);
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = val; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+
+  // smooth scroll for anchor CTAs
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var id = a.getAttribute('href');
+      if (id.length > 1) {
+        var el = document.querySelector(id);
+        if (el) {
+          e.preventDefault();
+          window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 24, behavior: 'smooth' });
+          history.replaceState(null, '', id);
+        }
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
