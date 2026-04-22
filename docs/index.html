@@ -199,14 +199,14 @@
   /* Diagram */
   .diagram {
     margin-top: 64px;
-    padding: 36px 28px;
+    padding: 44px 28px 36px;
     border: 1px solid var(--line);
     border-radius: 12px;
     background: var(--bg-soft);
     display: grid;
-    grid-template-columns: 1fr auto 1fr auto 1fr;
-    gap: 20px;
-    align-items: center;
+    grid-template-columns: 1fr 70px 1fr 70px 1fr;
+    gap: 12px;
+    align-items: stretch;
   }
   .diagram .node {
     padding: 18px;
@@ -235,7 +235,19 @@
   }
   .diagram .arrow {
     position: relative;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+  }
+  .diagram .arrow-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    white-space: nowrap;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
   }
   .diagram .arrow-line {
     display: block;
@@ -252,17 +264,6 @@
     border-right: 1px solid var(--ink-soft);
     border-top: 1px solid var(--ink-soft);
     transform: translateY(-50%) rotate(45deg);
-  }
-  .diagram .arrow-lbl {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--ink-mute);
-    padding: 2px 6px;
-    background: var(--bg-soft);
-    position: absolute;
-    top: -8px; left: 50%;
-    transform: translateX(-50%);
-    white-space: nowrap;
   }
 
   /* Section headers */
@@ -686,13 +687,10 @@
     .sec-head { grid-template-columns: 1fr; gap: 10px; }
     .explainer { grid-template-columns: 1fr; }
     .tracks { grid-template-columns: 1fr; }
-    .diagram { grid-template-columns: 1fr; padding: 24px 20px; }
-    .diagram .arrow { height: 30px; }
-    .diagram .arrow-line { width: 1px; height: 100%; margin: 0 auto; }
-    .diagram .arrow-line::after {
-      right: 50%; top: auto; bottom: -1px;
-      transform: translateX(50%) rotate(135deg);
-    }
+    .diagram { grid-template-columns: 1fr; padding: 24px 20px; gap: 8px; }
+    .diagram .arrow { min-height: auto; padding: 10px 0; flex-direction: row; gap: 10px; }
+    .diagram .arrow-lbl { margin-bottom: 0; }
+    .diagram .arrow-line { width: 40px; height: 1px; flex: none; }
     .verify-row { grid-template-columns: 1fr; gap: 8px; }
     .fork { grid-template-columns: 1fr; }
     footer .wrap { grid-template-columns: 1fr 1fr; }
@@ -755,8 +753,8 @@
         <div class="sub">Authenticates via Auth0 (DCR&nbsp;+&nbsp;PKCE for public, client credentials for partners).</div>
       </div>
       <div class="arrow">
+        <span class="arrow-lbl mono">MCP&nbsp;/&nbsp;A2A</span>
         <span class="arrow-line"></span>
-        <span class="arrow-lbl mono">JSON-RPC 2.0 · MCP / A2A</span>
       </div>
       <div class="node">
         <div class="eyebrow">Endpoint</div>
@@ -764,8 +762,8 @@
         <div class="sub">8 tools. Scope-gated. 60&nbsp;RPM burst. 90-day audit trail.</div>
       </div>
       <div class="arrow">
+        <span class="arrow-lbl mono">hourly&nbsp;sync</span>
         <span class="arrow-line"></span>
-        <span class="arrow-lbl mono">hourly sync</span>
       </div>
       <div class="node">
         <div class="eyebrow">Source of truth</div>
