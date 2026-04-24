@@ -3,8 +3,8 @@
 **Automotive extensions to the [Universal Commerce Protocol (UCP)](https://developers.googleblog.com/en/under-the-hood-universal-commerce-protocol-ucp/).**
 
 > 🌐 **Live reference implementation at Mark Miller Subaru** — landing page at
-> **[mm-open.github.io/dmc-12](https://mm-open.github.io/dmc-12/)** with connect
-> buttons for Claude / ChatGPT / Gemini and a partner-onboarding contact.
+> **[dmc-12.ai](https://dmc-12.ai)** with connect buttons for Claude /
+> ChatGPT / Gemini and a partner-onboarding contact.
 
 DMC-12 defines the capabilities a dealership agent surface needs that the
 UCP core does not cover: VIN-level inventory, asking-price quotes, soft
@@ -13,7 +13,7 @@ out-the-door pricing, trade-in intake, test-drive scheduling, F&I menu, and
 return-policy extensions that make retail vehicle commerce distinct from
 physical-goods checkout.
 
-- **Landing page:** <https://mm-open.github.io/dmc-12/>
+- **Landing page:** <https://dmc-12.ai>
 - **Spec:** [`SPEC.md`](./SPEC.md)
 - **Capabilities:** [`capabilities/`](./capabilities/)
 - **JSON Schemas (2020-12):** [`schemas/`](./schemas/)
@@ -72,7 +72,7 @@ Capabilities stubbed for v0.2+:
 
 ## Who authors this
 
-DMC-12 was drafted in April 2026 by Ben Reuling and Chris Hudson (General
-Manager) of Mark Miller Subaru as the automotive reference extension for
-UCP. Individual capability authorship is attributed in each capability's
+DMC-12 was drafted in April 2026 by Ben Reuling (AI Systems Engineer)
+and Chris Hudson (General Manager) of Mark Miller Subaru as the
+automotive reference extension for UCP. Individual capability authorship is attributed in each capability's
 front-matter. Contributions welcome — see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
