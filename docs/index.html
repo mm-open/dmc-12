@@ -714,7 +714,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>spec 2026-04-21</span>
+      <span>spec 2026-04-26 · DMC-12 v0.2</span>
       <span class="sep">·</span>
       <span>UCP v1</span>
     </div>
@@ -759,7 +759,7 @@
       <div class="node">
         <div class="eyebrow">Endpoint</div>
         <div class="ttl">mm-inventory-mcp · Cloud Run</div>
-        <div class="sub">8 tools. Scope-gated. 60&nbsp;RPM burst. 90-day audit trail.</div>
+        <div class="sub">10 tools at MM. Scope-gated. 60&nbsp;RPM burst. 90-day audit trail.</div>
       </div>
       <div class="arrow">
         <span class="arrow-lbl mono">hourly&nbsp;sync</span>
@@ -815,8 +815,8 @@
         <div class="num">02 / Tool inventory</div>
       </div>
       <div>
-        <h2>Eight tools. Scope-gated. No negotiation — every quote is at asking price.</h2>
-        <p class="sub">Public (consumer) agents see the four read tools. Named partners see all eight. The tool catalog returned by <span class="mono">tools/list</span> is filtered by caller class at the server.</p>
+        <h2>Ten tools at MM. Scope-gated. MM keeps negotiation off — every quote is at asking price.</h2>
+        <p class="sub">Public (consumer) agents see the five read tools. Named partners see all nine grid tools plus <span class="mono">initiate_deal_handoff</span>. The tool catalog returned by <span class="mono">tools/list</span> is filtered by caller class at the server.</p>
       </div>
     </div>
 
@@ -840,6 +840,11 @@
         <div class="scope"><span class="pip"></span>inventory:read</div>
         <div class="name">list_inventory</div>
         <div class="desc">Structured-filter paginated listing — year, make, model, trim, price window, mileage cap.</div>
+      </div>
+      <div class="tool read">
+        <div class="scope"><span class="pip"></span>pricing:read</div>
+        <div class="name">get_pricing_disclosure</div>
+        <div class="desc">Itemized out-the-door estimate — taxes, doc fee, title, registration. Read-only; non-binding; surfaced once MM ops finalizes fee values.</div>
       </div>
       <div class="tool write">
         <div class="scope"><span class="pip"></span>quote:write</div>
@@ -870,7 +875,11 @@
     </div>
 
     <p style="margin-top: 22px; font-size: 13px; color: var(--ink-mute); line-height: 1.6;">
-      A ninth tool — <span class="mono">initiate_deal_handoff</span> (scope <span class="mono">deal:handoff</span>, PII-accepting, emits a signed email to a live sales manager) — is available to internal and named-partner agents only. Not exposed on the public rail. Ask us about it in the partner track below.
+      A tenth tool — <span class="mono">initiate_deal_handoff</span> (scope <span class="mono">deal:handoff</span>, PII-accepting, emits a signed email to a live sales manager) — is available to internal and named-partner agents only. Not exposed on the public rail. Ask us about it in the partner track below.
+    </p>
+
+    <p style="margin-top: 14px; font-size: 13px; color: var(--ink-mute); line-height: 1.6;">
+      The DMC-12 v0.2 spec also defines four partner-only negotiation tools — <span class="mono">submit_offer</span>, <span class="mono">submit_counter_offer</span>, <span class="mono">accept_offer</span>, <span class="mono">reject_offer</span> (scope <span class="mono">quote:negotiate</span>) — that bring the canonical surface to 14. <strong>MM keeps negotiation off:</strong> the four tools are not registered on this deployment and the <span class="mono">ai.dmc12.automotive.negotiation</span> capability is not advertised on our UCP manifest. Other dealerships forking the open spec can flip them on.
     </p>
   </div>
 </section>
@@ -921,7 +930,7 @@
 
         <ul class="feats">
           <li><span class="chk"></span><div><strong>Signed A2A v1.0 Agent Card</strong> — JWS over JCS-canonicalized payload, verifiable against our public JWKS.</div></li>
-          <li><span class="chk"></span><div><strong>Full 8-tool surface</strong> — read, quote, reservation, plus <span class="mono">initiate_deal_handoff</span> on request.</div></li>
+          <li><span class="chk"></span><div><strong>Full 10-tool surface at MM</strong> — read (inventory + pricing disclosure), quote, reservation, plus <span class="mono">initiate_deal_handoff</span> on request.</div></li>
           <li><span class="chk"></span><div><strong>Quote / reservation semantics</strong> — 30-min TTL, non-binding soft holds, idempotent release, per-agent reservation budget.</div></li>
           <li><span class="chk"></span><div><strong>90-day audit trail</strong> with trace IDs surfaced on every envelope — correlate incidents against <span class="mono">mm_inventory.audit_log</span>.</div></li>
           <li><span class="chk"></span><div><strong>Per-partner rate limits</strong> tuned in <span class="mono">mm_inventory.agents</span>. Default 60&nbsp;RPM burst; higher tiers on request.</div></li>
@@ -930,6 +939,7 @@
         <div class="scopes">
           <span class="k">scopes you can request</span>
           <span class="chip">inventory:read</span>
+          <span class="chip">pricing:read</span>
           <span class="chip">quote:write</span>
           <span class="chip">reservation:write</span>
           <span class="chip">deal:handoff</span>
@@ -982,7 +992,7 @@
       <div class="verify-row">
         <div class="what">
           UCP manifest
-          <span class="hint">UCP v1 — merchant, capabilities, freshness SLA</span>
+          <span class="hint">UCP v1 — merchant, capabilities (<span class="mono">ai.dmc12.automotive.*</span>, v0.2), freshness SLA</span>
         </div>
         <a class="url" data-mcp-path="/.well-known/ucp" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/ucp
@@ -1013,6 +1023,24 @@
         </div>
         <a class="url" href="https://github.com/mm-open/dmc-12" target="_blank" rel="noopener">
           github.com/mm-open/dmc-12
+        </a>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          Specification (served)
+          <span class="hint">Service-level + capability spec — Cloudflare Worker proxy of <span class="mono">mm-open/dmc-12</span></span>
+        </div>
+        <a class="url" href="https://dmc12.ai/specification/SPEC.md" target="_blank" rel="noopener">
+          dmc12.ai/specification/SPEC.md
+        </a>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          Schemas (served)
+          <span class="hint">JSON Schema 2020-12 — one file per capability under <span class="mono">/schemas/</span></span>
+        </div>
+        <a class="url" href="https://dmc12.ai/schemas/inventory.json" target="_blank" rel="noopener">
+          dmc12.ai/schemas/{capability}.json
         </a>
       </div>
     </div>
