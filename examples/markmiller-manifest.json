@@ -13,9 +13,9 @@
           "agent_card": "https://mcp.dealer.example/.well-known/agent-card.json"
         }
       },
-      "org.dmc12.automotive": {
-        "version": "0.1.0",
-        "spec": "https://github.com/mm-open/dmc-12/blob/main/SPEC.md",
+      "ai.dmc12.automotive": {
+        "version": "0.2.0",
+        "spec": "https://dmc12.ai/specification/SPEC.md",
         "mcp": {
           "endpoint": "https://mcp.dealer.example/mcp/"
         },
@@ -31,29 +31,42 @@
         "spec": "https://ucp.dev/specs/shopping/catalog"
       },
       {
-        "name": "org.dmc12.automotive.inventory",
+        "name": "ai.dmc12.automotive.inventory",
         "version": "0.1.0",
-        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/inventory.md",
-        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/inventory.json",
+        "spec": "https://dmc12.ai/specification/inventory.md",
+        "schema": "https://dmc12.ai/schemas/inventory.json",
         "extends": "dev.ucp.shopping.catalog"
       },
       {
-        "name": "org.dmc12.automotive.quote",
-        "version": "0.1.0",
-        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/quote.md",
-        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/quote.json"
+        "name": "ai.dmc12.automotive.quote",
+        "version": "0.2.0",
+        "spec": "https://dmc12.ai/specification/quote.md",
+        "schema": "https://dmc12.ai/schemas/quote.json"
       },
       {
-        "name": "org.dmc12.automotive.reservation",
+        "name": "ai.dmc12.automotive.reservation",
         "version": "0.1.0",
-        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/reservation.md",
-        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/reservation.json"
+        "spec": "https://dmc12.ai/specification/reservation.md",
+        "schema": "https://dmc12.ai/schemas/reservation.json"
       },
       {
-        "name": "org.dmc12.automotive.deal_handoff",
+        "name": "ai.dmc12.automotive.deal_handoff",
         "version": "0.1.0",
-        "spec": "https://github.com/mm-open/dmc-12/blob/main/capabilities/deal-handoff.md",
-        "schema": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/deal-handoff.json"
+        "spec": "https://dmc12.ai/specification/deal-handoff.md",
+        "schema": "https://dmc12.ai/schemas/deal-handoff.json"
+      },
+      {
+        "name": "ai.dmc12.automotive.negotiation",
+        "version": "0.1.0",
+        "spec": "https://dmc12.ai/specification/negotiation.md",
+        "schema": "https://dmc12.ai/schemas/negotiation_policy.json",
+        "extends": "ai.dmc12.automotive.quote"
+      },
+      {
+        "name": "ai.dmc12.automotive.pricing_disclosure",
+        "version": "0.1.0",
+        "spec": "https://dmc12.ai/specification/pricing-disclosure.md",
+        "schema": "https://dmc12.ai/schemas/pricing_disclosure.json"
       }
     ]
   },
@@ -77,7 +90,7 @@
     "handlers": []
   },
   "policies": {
-    "negotiation": "none — all transactions at listed asking_price",
+    "negotiation": "per-VIN policy declared via ai.dmc12.automotive.negotiation — supported types: fixed | stepwise | bestoffer",
     "quote_ttl_seconds": 1800,
     "reservation_ttl_seconds": 1800,
     "pii": "opaque refs only — exception: deal_handoff accepts customer PII with explicit consent",

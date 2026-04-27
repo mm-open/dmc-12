@@ -14,9 +14,9 @@ return-policy extensions that make retail vehicle commerce distinct from
 physical-goods checkout.
 
 - **Landing page:** <https://dmc-12.ai>
-- **Spec:** [`SPEC.md`](./SPEC.md)
-- **Capabilities:** [`capabilities/`](./capabilities/)
-- **JSON Schemas (2020-12):** [`schemas/`](./schemas/)
+- **Spec:** [`SPEC.md`](./SPEC.md) — canonical spec served at <https://dmc12.ai/specification/> (Cloudflare Worker proxy → this repo's `main` branch)
+- **Capabilities:** [`capabilities/`](./capabilities/) — also at <https://dmc12.ai/specification/{capability}.md>
+- **JSON Schemas (2020-12):** [`schemas/`](./schemas/) — also at <https://dmc12.ai/schemas/{capability}.json>
 - **Reference manifest (Mark Miller Subaru):** [`examples/markmiller-manifest.json`](./examples/markmiller-manifest.json)
 - **MCP Registry manifest:** [`server.json`](./server.json)
 
@@ -38,7 +38,7 @@ and it will discover the rest automatically via DCR + PKCE.
 
 ## Relationship to UCP
 
-DMC-12 is a UCP capability namespace (`org.dmc12.automotive.*`). A dealer
+DMC-12 is a UCP capability namespace (`ai.dmc12.automotive.*`). A dealer
 who advertises a DMC-12 capability on their `/.well-known/ucp` manifest is
 declaring that the endpoint honors both UCP's catalog/checkout semantics
 and the automotive-specific data contracts defined here.
@@ -53,18 +53,22 @@ Mark Miller Subaru Midtown (Salt Lake City, UT).
 
 Capabilities implemented in v0.1:
 
-- `org.dmc12.automotive.inventory` — catalog extension with VIN, stock #, condition, mileage
-- `org.dmc12.automotive.quote` — 30-minute price quote at listed asking price
-- `org.dmc12.automotive.reservation` — 30-minute soft hold on a VIN
-- `org.dmc12.automotive.deal_handoff` — hand a reservation to a live sales manager
+- `ai.dmc12.automotive.inventory` — catalog extension with VIN, stock #, condition, mileage
+- `ai.dmc12.automotive.quote` — 30-minute price quote at listed asking price
+- `ai.dmc12.automotive.reservation` — 30-minute soft hold on a VIN
+- `ai.dmc12.automotive.deal_handoff` — hand a reservation to a live sales manager
 
-Capabilities stubbed for v0.2+:
+New in v0.2 (draft):
 
-- `org.dmc12.automotive.otd_pricing` — out-the-door pricing (tax, doc fee, DMV)
-- `org.dmc12.automotive.trade_intake` — structured trade-in appraisal request
-- `org.dmc12.automotive.test_drive` — test-drive scheduling
-- `org.dmc12.automotive.fni_menu` — F&I product menu
-- `org.dmc12.automotive.return_policy` — lemon / return / cancellation policy
+- `ai.dmc12.automotive.negotiation` — three policies (`fixed`, `stepwise`, `bestoffer`) declared per-VIN; `submit_offer`, `submit_counter_offer`, `accept_offer`, `reject_offer` tools
+- `ai.dmc12.automotive.pricing_disclosure` — itemized price lines (vehicle, taxes, doc fees, title, registration), `out_the_door` estimate, `disclosure_form_url` slot for state-mandated forms; replaces v0.1's `otd_pricing` stub
+
+Capabilities still stubbed for future minor versions:
+
+- `ai.dmc12.automotive.trade_intake` — structured trade-in appraisal request
+- `ai.dmc12.automotive.test_drive` — test-drive scheduling
+- `ai.dmc12.automotive.fni_menu` — F&I product menu
+- `ai.dmc12.automotive.return_policy` — lemon / return / cancellation policy
 
 ## License
 

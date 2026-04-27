@@ -1,5 +1,5 @@
 ---
-capability: org.dmc12.automotive.fni_menu
+capability: ai.dmc12.automotive.fni_menu
 version: 0.1.0
 status: stub
 authors:
@@ -7,7 +7,7 @@ authors:
   - chris-hudson
 ---
 
-# org.dmc12.automotive.fni_menu (STUB — v0.2+)
+# ai.dmc12.automotive.fni_menu (STUB — v0.3+)
 
 **Status: Not yet implemented.**
 

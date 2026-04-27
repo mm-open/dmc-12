@@ -1,5 +1,5 @@
 ---
-capability: org.dmc12.automotive.deal_handoff
+capability: ai.dmc12.automotive.deal_handoff
 version: 0.1.0
 status: implemented
 extends: dev.ucp.shopping.checkout
@@ -8,7 +8,7 @@ authors:
   - chris-hudson
 ---
 
-# org.dmc12.automotive.deal_handoff
+# ai.dmc12.automotive.deal_handoff
 
 Hands an agent-initiated reservation to a live sales manager at the
 dealer as a "deal intent package." Completes the human-in-the-loop step
@@ -24,7 +24,7 @@ This is the **only** DMC-12 capability that accepts customer PII.
 
 ## Input
 
-See [`schemas/deal-handoff.json`](../schemas/deal-handoff.json).
+See [`schemas/deal-handoff.json`](https://dmc12.ai/schemas/deal-handoff.json).
 
 | Field | Type | Required | Notes |
 |---|---|---|---|

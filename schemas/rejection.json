@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id":     "https://dmc12.ai/schemas/rejection.json",
+  "title":   "DMC-12 Offer Rejection v0.1.0",
+  "type":    "object",
+  "additionalProperties": false,
+  "required": ["offer_id", "context_id", "reason_code", "rejected_at"],
+  "properties": {
+    "offer_id":     {"type": "string", "format": "uuid"},
+    "context_id":   {"type": "string", "format": "uuid"},
+    "reason_code":  {"$ref": "common.json#/$defs/RejectionReason"},
+    "rejected_at":  {"type": "string", "format": "date-time"}
+  }
+}

@@ -23,7 +23,7 @@ DMC-12 is co-authored and co-maintained by:
   capability scoping)
 
 Maintainers review and merge PRs, manage the release cadence, and hold
-the `org.dmc12.automotive.*` namespace (see below).
+the `ai.dmc12.automotive.*` namespace (see below).
 
 Additional maintainers may be added by unanimous agreement of the
 current maintainers after demonstrated sustained contribution.
@@ -35,7 +35,7 @@ In short:
 
 1. Open an issue describing the problem or proposal before writing a PR.
 2. For schema changes, include a migration note.
-3. For new capabilities in the `org.dmc12.automotive.*` namespace, add a
+3. For new capabilities in the `ai.dmc12.automotive.*` namespace, add a
    `capabilities/<name>.md`, a `schemas/<name>.json`, and an entry in
    `SPEC.md §2`.
 4. For dealer- or vendor-specific capabilities, use a `com.<dealer>.*`
@@ -44,7 +44,7 @@ In short:
 
 ## Namespace Ownership
 
-The `org.dmc12.automotive.*` capability namespace is owned by this
+The `ai.dmc12.automotive.*` capability namespace is owned by this
 repository's maintainers. Only capabilities specified here may claim
 this prefix.
 

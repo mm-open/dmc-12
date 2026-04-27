@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/inventory.json",
+  "$id": "https://dmc12.ai/schemas/inventory.json",
   "title": "DMC-12 Inventory Capability v0.1.0",
-  "description": "Vehicle record schema for org.dmc12.automotive.inventory. Extends dev.ucp.shopping.catalog.",
+  "description": "Vehicle record schema for ai.dmc12.automotive.inventory. Extends dev.ucp.shopping.catalog.",
   "type": "object",
   "properties": {
     "input": {

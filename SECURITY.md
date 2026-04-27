@@ -30,7 +30,7 @@ We commit to:
 
 ## PII Posture of the Specification
 
-One capability — `org.dmc12.automotive.deal_handoff` — accepts customer
+One capability — `ai.dmc12.automotive.deal_handoff` — accepts customer
 PII (name, phone, email) by design. All other capabilities forbid PII in
 their input/output fields. Conformant implementations of `deal_handoff`
 MUST:

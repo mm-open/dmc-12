@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id":     "https://dmc12.ai/schemas/counter.json",
+  "title":   "DMC-12 Counter-Offer v0.1.0",
+  "type":    "object",
+  "additionalProperties": false,
+  "required": ["offer_id", "context_id", "parent_offer_id",
+               "proposed_price", "round", "expires_at"],
+  "properties": {
+    "offer_id":        {"type": "string", "format": "uuid"},
+    "context_id":      {"type": "string", "format": "uuid"},
+    "parent_offer_id": {"type": "string", "format": "uuid"},
+    "proposed_price":  {"$ref": "common.json#/$defs/Money"},
+    "round":           {"type": "integer", "minimum": 1, "maximum": 20},
+    "expires_at":      {"type": "string", "format": "date-time"}
+  }
+}

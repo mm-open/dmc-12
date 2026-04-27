@@ -38,10 +38,11 @@ DMC-12 capabilities extend two UCP core capabilities:
 
 | UCP core | DMC-12 extension (status) | Relationship |
 |---|---|---|
-| `dev.ucp.shopping.catalog` | `org.dmc12.automotive.inventory` *(implemented v0.1)* | Adds VIN, stock #, condition, mileage, drivetrain, body_style, days_on_lot. |
-| `dev.ucp.shopping.checkout` | `org.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented v0.1)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
-| `dev.ucp.shopping.checkout` | `org.dmc12.automotive.otd_pricing` + `.trade_intake` *(stub — v0.2+)* | Out-the-door itemization and trade-in intake also extend checkout. Schemas are published as stubs so they show up in capability indexing; `additionalProperties: false` prevents accidental PII leakage through an undefined surface. |
-| *(none — new namespace)* | `org.dmc12.automotive.test_drive` + `.fni_menu` + `.return_policy` *(stub — v0.2+)* | Out-of-band from UCP checkout; they describe the retail wrapper around the vehicle sale rather than the transaction itself. |
+| `dev.ucp.shopping.catalog` | `ai.dmc12.automotive.inventory` *(implemented v0.1)* | Adds VIN, stock #, condition, mileage, drivetrain, body_style, days_on_lot. |
+| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented v0.1)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
+| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.negotiation` + `.pricing_disclosure` *(draft — v0.2)* | Negotiation publishes per-VIN policy types (`fixed` / `stepwise` / `bestoffer`) and offer/counter/acceptance/rejection envelopes. Pricing disclosure publishes itemized price lines with `kind` × `payee` tagging plus an OTD estimate. |
+| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.trade_intake` *(stub — v0.3+)* | Trade-in intake also extends checkout. Schema is published as a stub so it shows up in capability indexing; `additionalProperties: false` prevents accidental PII leakage through an undefined surface. |
+| *(none — new namespace)* | `ai.dmc12.automotive.test_drive` + `.fni_menu` + `.return_policy` *(stub — v0.3+)* | Out-of-band from UCP checkout; they describe the retail wrapper around the vehicle sale rather than the transaction itself. |
 
 AP2 Intent / Cart / Payment mandates are **not** implemented in v0.1. A
 DMC-12 `deal_handoff` call records a Boolean `customer_consent` artifact
@@ -68,14 +69,17 @@ Deferring AP2 is deliberate, not an oversight:
    (`quoted_price == asking_price`), so no Intent Mandate is yet
    required.
 
-v0.2+ will define `org.dmc12.automotive.otd_pricing` and
-`org.dmc12.automotive.trade_intake` as the line-item schemas an AP2 Cart
-Mandate can reference, and clarify which DMC-12 capabilities require
-which AP2 mandate types. AP2 canonical URL: <http://goo.gle/ap2>.
+v0.2 introduces `ai.dmc12.automotive.pricing_disclosure` as the
+itemized line-item schema an AP2 Cart Mandate can reference (replacing
+v0.1's `otd_pricing` stub) and `ai.dmc12.automotive.negotiation` as the
+per-VIN policy + offer/counter/acceptance shape an AP2 Intent Mandate
+can reference. v0.3+ will define `ai.dmc12.automotive.trade_intake` and
+clarify which DMC-12 capabilities require which AP2 mandate types. AP2
+canonical URL: <http://goo.gle/ap2>.
 
 ## 3. Capability Namespace Rules
 
-- `org.dmc12.automotive.*` is reserved for this specification. Only the
+- `ai.dmc12.automotive.*` is reserved for this specification. Only the
   capabilities listed in [`capabilities/`](./capabilities/) may claim this
   prefix. New capabilities require a PR to this repo.
 - Dealer- or vendor-specific capabilities SHOULD use a
@@ -83,6 +87,20 @@ which AP2 mandate types. AP2 canonical URL: <http://goo.gle/ap2>.
   `com.markmillersubaru.service_scheduling`.
 - Manifests MAY advertise both a UCP core capability and its DMC-12
   extension. Agents SHOULD prefer the DMC-12 extension when available.
+
+### 3.1 Spec and schema URLs
+
+DMC-12 capability documents and JSON Schemas are served from
+`dmc12.ai`. Capability manifests SHOULD reference these canonical
+URLs (not raw GitHub URLs):
+
+- Capability spec: `https://dmc12.ai/specification/<capability>.md`
+- Capability schema: `https://dmc12.ai/schemas/<capability>.json`
+
+The serving origin is a Cloudflare Worker proxy that resolves to this
+repo's `main` branch. The GitHub repo
+(<https://github.com/mm-open/dmc-12>) remains the source of truth and
+the place to file PRs.
 
 ## 4. Data Contracts
 
@@ -112,8 +130,9 @@ Integer miles. Implementations SHOULD return `null` for new vehicles
 - **`asking_price`** — required, in the merchant's declared currency.
 - **`msrp`** — optional, decimal. Manufacturer's suggested retail price.
 - DMC-12 v0.1 does NOT represent OTD pricing (tax + doc fee + DMV fees +
-  add-ons). That capability is reserved for v0.2 as
-  `org.dmc12.automotive.otd_pricing`.
+  add-ons). v0.2 introduces
+  `ai.dmc12.automotive.pricing_disclosure` as the itemized line-item
+  schema (replacing v0.1's `otd_pricing` stub).
 
 ## 5. Inventory Accuracy Declaration
 
@@ -144,7 +163,7 @@ Capabilities MAY publish a `response_sla_ms` hint at the manifest level:
 ```json
 "capabilities": [
   {
-    "name": "org.dmc12.automotive.inventory",
+    "name": "ai.dmc12.automotive.inventory",
     "version": "0.1.0",
     "response_sla_ms": 2000
   }
@@ -162,7 +181,7 @@ capabilities are opaque strings (max 200 chars) that the agent may use to
 correlate a UCP transaction with its own internal record. Agents MUST NOT
 place customer PII in these fields.
 
-`org.dmc12.automotive.deal_handoff` is the **single exception**. By
+`ai.dmc12.automotive.deal_handoff` is the **single exception**. By
 construction, a deal hand-off transfers customer contact information
 (name, phone, email) to the dealer's sales team for human follow-up.
 Implementations MUST:
@@ -205,7 +224,31 @@ Lake City, UT:
   the actual endpoint from the dealer's published UCP well-known URL
   rather than the example file.
 
-## 10. Authors
+## 10. v0.2 Additions (Draft)
+
+DMC-12 v0.2 introduces two new capabilities that replace what v0.1
+deferred. Both are draft and may evolve before the v0.2 tag ships;
+schemas live alongside the v0.1 schemas at
+[`schemas/`](./schemas/).
+
+| Capability | Version | Status | Schemas | Spec |
+|---|---|---|---|---|
+| `ai.dmc12.automotive.negotiation` | 0.1.0 | draft | [`negotiation_policy.json`](./schemas/negotiation_policy.json), [`offer.json`](./schemas/offer.json), [`counter.json`](./schemas/counter.json), [`acceptance.json`](./schemas/acceptance.json), [`rejection.json`](./schemas/rejection.json) | [`capabilities/negotiation.md`](./capabilities/negotiation.md) |
+| `ai.dmc12.automotive.pricing_disclosure` | 0.1.0 | draft | [`pricing_disclosure.json`](./schemas/pricing_disclosure.json) | [`capabilities/pricing-disclosure.md`](./capabilities/pricing-disclosure.md) |
+
+Shared `$defs` (Money, FeePayee, FeeKind, PriceLine, FeeRule,
+NegotiationState, RejectionReason) live in
+[`schemas/common.json`](./schemas/common.json) and are referenced via
+`$ref` from each v0.2 schema.
+
+The v0.1 stub `otd_pricing` (under the prior namespace) is retired in
+v0.2: the `otd-pricing.md` capability doc was renamed to
+`pricing-disclosure.md` (promoted from `stub` to `draft`) and
+`otd-pricing.json` was deleted in favor of `pricing_disclosure.json`.
+Implementations migrating from v0.1 should replace any `otd_pricing`
+references with `ai.dmc12.automotive.pricing_disclosure`.
+
+## 11. Authors
 
 - Ben Reuling — Mark Miller Subaru (reference implementation, spec
   editor)

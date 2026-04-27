@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dmc12.ai/schemas/common.json",
+  "title": "DMC-12 Common Definitions v0.1.0",
+  "description": "Shared $defs (Money, FeePayee, FeeKind, PriceLine, FeeRule, NegotiationState, RejectionReason) referenced by negotiation and pricing-disclosure schemas.",
+  "$defs": {
+    "Money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount":   {"type": "number", "minimum": 0},
+        "currency": {"type": "string", "pattern": "^[A-Z]{3}$"}
+      }
+    },
+    "FeePayee": {
+      "enum": ["government", "dealer", "manufacturer", "third_party"]
+    },
+    "FeeKind": {
+      "enum": [
+        "vehicle_price", "tax", "title", "registration", "doc",
+        "addon", "transport", "rebate", "discount",
+        "trade_credit", "down_payment", "lien_payoff", "interest"
+      ]
+    },
+    "PriceLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "kind", "payee", "amount"],
+      "properties": {
+        "label":           {"type": "string", "maxLength": 80},
+        "kind":            {"$ref": "#/$defs/FeeKind"},
+        "payee":           {"$ref": "#/$defs/FeePayee"},
+        "amount":          {"$ref": "#/$defs/Money"},
+        "statutory_basis": {"type": "string"},
+        "negotiable":      {"type": "boolean", "default": false}
+      }
+    },
+    "FeeRule": {
+      "description": "Storage shape for an entry in fee_schedules.fee_lines. The compose step in get_pricing_disclosure converts a FeeRule into a PriceLine by either copying the fixed amount or computing rate × applicable_base. PriceLine is the OUTPUT shape (every line has a concrete amount); FeeRule is the INPUT shape (a line may carry either a fixed amount or a percentage rate).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "kind", "payee"],
+      "oneOf": [
+        {"required": ["amount"], "not": {"required": ["rate"]}},
+        {"required": ["rate"],   "not": {"required": ["amount"]}}
+      ],
+      "properties": {
+        "label":           {"type": "string", "maxLength": 80},
+        "kind":            {"$ref": "#/$defs/FeeKind"},
+        "payee":           {"$ref": "#/$defs/FeePayee"},
+        "amount":          {"$ref": "#/$defs/Money"},
+        "rate":            {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Decimal rate (e.g. 0.0685 = 6.85%). Applied to the rule's applicable_base."
+        },
+        "applicable_base": {
+          "enum": ["vehicle_price", "vehicle_price_plus_addons",
+                   "subtotal_pre_tax"],
+          "default": "subtotal_pre_tax",
+          "description": "Which prior PriceLine sum the rate is multiplied against. Only meaningful when rate is set."
+        },
+        "statutory_basis": {"type": "string"},
+        "negotiable":      {"type": "boolean", "default": false}
+      }
+    },
+    "NegotiationState": {
+      "enum": ["proposed", "countered", "accepted",
+               "rejected", "expired", "withdrawn"]
+    },
+    "RejectionReason": {
+      "enum": ["below_reserve", "expired", "max_rounds_exceeded",
+               "vehicle_unavailable", "policy_violation",
+               "customer_withdrew"]
+    }
+  }
+}

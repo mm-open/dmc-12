@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/trade-intake.json",
+  "$id": "https://dmc12.ai/schemas/trade-intake.json",
   "title": "DMC-12 Trade Intake Capability v0.1.0 (STUB)",
   "description": "STUB — capability not yet implemented. Schema subject to change in v0.2.",
   "type": "object",

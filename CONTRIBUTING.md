@@ -11,7 +11,7 @@ DMC-12 is an open specification. We welcome:
 
 - Bug reports on capability schemas (fields that don't round-trip,
   validation ambiguity).
-- Proposed new capabilities in the `org.dmc12.automotive.*` namespace.
+- Proposed new capabilities in the `ai.dmc12.automotive.*` namespace.
 - Reference-implementation snippets in other languages.
 
 ## How changes flow
@@ -22,7 +22,7 @@ DMC-12 is an open specification. We welcome:
 2. **For schema changes**, include a migration note in the PR body:
    what existing manifests will break, and how a merchant should version
    up safely.
-3. **For new capabilities** in the `org.dmc12.automotive.*` namespace:
+3. **For new capabilities** in the `ai.dmc12.automotive.*` namespace:
    - Add `capabilities/<name>.md` with front-matter.
    - Add `schemas/<name>.json` (JSON Schema 2020-12).
    - Add an entry to the `SPEC.md` §2 table.

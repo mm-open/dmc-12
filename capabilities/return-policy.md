@@ -1,5 +1,5 @@
 ---
-capability: org.dmc12.automotive.return_policy
+capability: ai.dmc12.automotive.return_policy
 version: 0.1.0
 status: stub
 authors:
@@ -7,7 +7,7 @@ authors:
   - chris-hudson
 ---
 
-# org.dmc12.automotive.return_policy (STUB — v0.2+)
+# ai.dmc12.automotive.return_policy (STUB — v0.3+)
 
 **Status: Not yet implemented.**
 

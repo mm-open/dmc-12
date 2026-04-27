@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id":     "https://dmc12.ai/schemas/pricing_disclosure.json",
+  "title":   "DMC-12 Pricing Disclosure v0.1.0",
+  "type":    "object",
+  "additionalProperties": false,
+  "required": ["price_lines", "subtotal", "taxes_total", "fees_total",
+               "out_the_door", "as_of", "jurisdiction"],
+  "properties": {
+    "price_lines":          {"type": "array",
+                             "items": {"$ref": "common.json#/$defs/PriceLine"}},
+    "subtotal":             {"$ref": "common.json#/$defs/Money"},
+    "taxes_total":          {"$ref": "common.json#/$defs/Money"},
+    "fees_total":           {"$ref": "common.json#/$defs/Money"},
+    "out_the_door":         {"$ref": "common.json#/$defs/Money"},
+    "trade_in_credit":      {"$ref": "common.json#/$defs/Money"},
+    "as_of":                {"type": "string", "format": "date-time"},
+    "jurisdiction":         {"type": "string", "pattern": "^[A-Z]{2}-[A-Z0-9]+$"},
+    "estimate":             {"type": "boolean", "default": true},
+    "disclosure_form_url":  {"type": "string", "format": "uri"}
+  }
+}

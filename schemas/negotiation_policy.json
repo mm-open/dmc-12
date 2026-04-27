@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dmc12.ai/schemas/negotiation_policy.json",
+  "title": "DMC-12 Negotiation Policy v0.1.0",
+  "type": "object",
+  "oneOf": [
+    {
+      "additionalProperties": false,
+      "required": ["policy"],
+      "properties": {"policy": {"const": "fixed"}}
+    },
+    {
+      "additionalProperties": false,
+      "required": ["policy", "min_price", "step", "max_rounds"],
+      "properties": {
+        "policy":     {"const": "stepwise"},
+        "min_price":  {"$ref": "common.json#/$defs/Money"},
+        "step":       {"$ref": "common.json#/$defs/Money"},
+        "max_rounds": {"type": "integer", "minimum": 1, "maximum": 10}
+      }
+    },
+    {
+      "additionalProperties": false,
+      "required": ["policy", "reserve_price", "expires_at"],
+      "properties": {
+        "policy":        {"const": "bestoffer"},
+        "reserve_price": {"$ref": "common.json#/$defs/Money"},
+        "expires_at":    {"type": "string", "format": "date-time"}
+      }
+    }
+  ]
+}

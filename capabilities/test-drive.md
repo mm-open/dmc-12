@@ -1,5 +1,5 @@
 ---
-capability: org.dmc12.automotive.test_drive
+capability: ai.dmc12.automotive.test_drive
 version: 0.1.0
 status: stub
 authors:
@@ -7,7 +7,7 @@ authors:
   - chris-hudson
 ---
 
-# org.dmc12.automotive.test_drive (STUB — v0.2+)
+# ai.dmc12.automotive.test_drive (STUB — v0.3+)
 
 **Status: Not yet implemented.**
 

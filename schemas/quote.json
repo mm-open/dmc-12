@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/quote.json",
+  "$id": "https://dmc12.ai/schemas/quote.json",
   "title": "DMC-12 Quote Capability v0.1.0",
-  "description": "Input/output schema for org.dmc12.automotive.quote (request_quote).",
+  "description": "Input/output schema for ai.dmc12.automotive.quote (request_quote).",
   "type": "object",
   "properties": {
     "input": {

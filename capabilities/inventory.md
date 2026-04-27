@@ -1,5 +1,5 @@
 ---
-capability: org.dmc12.automotive.inventory
+capability: ai.dmc12.automotive.inventory
 version: 0.1.0
 status: implemented
 extends: dev.ucp.shopping.catalog
@@ -8,7 +8,7 @@ authors:
   - chris-hudson
 ---
 
-# org.dmc12.automotive.inventory
+# ai.dmc12.automotive.inventory
 
 Extends the UCP `dev.ucp.shopping.catalog` capability with the fields a
 vehicle-shopping agent needs: VIN, stock number, condition, mileage,
@@ -28,7 +28,7 @@ operate over the inventory contract:
 
 ## Vehicle record (response)
 
-See [`schemas/inventory.json`](../schemas/inventory.json) for the JSON
+See [`schemas/inventory.json`](https://dmc12.ai/schemas/inventory.json) for the JSON
 Schema.
 
 | Field | Type | Required | Notes |

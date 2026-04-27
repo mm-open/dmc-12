@@ -1,5 +1,5 @@
 ---
-capability: org.dmc12.automotive.trade_intake
+capability: ai.dmc12.automotive.trade_intake
 version: 0.1.0
 status: stub
 extends: dev.ucp.shopping.checkout
@@ -8,7 +8,7 @@ authors:
   - chris-hudson
 ---
 
-# org.dmc12.automotive.trade_intake (STUB — v0.2+)
+# ai.dmc12.automotive.trade_intake (STUB — v0.3+)
 
 **Status: Not yet implemented.**
 

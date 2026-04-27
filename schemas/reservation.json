@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/mm-open/dmc-12/main/schemas/reservation.json",
+  "$id": "https://dmc12.ai/schemas/reservation.json",
   "title": "DMC-12 Reservation Capability v0.1.0",
-  "description": "Input/output schema for org.dmc12.automotive.reservation (create/release/get_status).",
+  "description": "Input/output schema for ai.dmc12.automotive.reservation (create/release/get_status).",
   "type": "object",
   "properties": {
     "input": {

@@ -1,5 +1,5 @@
 ---
-capability: org.dmc12.automotive.reservation
+capability: ai.dmc12.automotive.reservation
 version: 0.1.0
 status: implemented
 extends: dev.ucp.shopping.checkout
@@ -8,7 +8,7 @@ authors:
   - chris-hudson
 ---
 
-# org.dmc12.automotive.reservation
+# ai.dmc12.automotive.reservation
 
 Converts an open quote into a 30-minute soft hold on a VIN. A reservation
 is **not** a binding purchase commitment — a human closes the deal.
@@ -27,7 +27,7 @@ sold out from under an in-progress transaction.
 
 ### Input
 
-See [`schemas/reservation.json`](../schemas/reservation.json).
+See [`schemas/reservation.json`](https://dmc12.ai/schemas/reservation.json).
 
 | Field | Type | Required | Notes |
 |---|---|---|---|

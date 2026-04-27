@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dmc12.ai/schemas/offer.json",
+  "title": "DMC-12 Offer v0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["offer_id", "context_id", "vehicle_vin",
+               "price_lines", "out_the_door", "expires_at",
+               "round", "state"],
+  "properties": {
+    "offer_id":       {"type": "string", "format": "uuid"},
+    "context_id":     {"type": "string", "format": "uuid"},
+    "vehicle_vin":    {"type": "string", "pattern": "^[A-HJ-NPR-Z0-9]{17}$"},
+    "parent_offer_id":{"type": ["string", "null"], "format": "uuid"},
+    "price_lines":    {"type": "array",
+                       "items": {"$ref": "common.json#/$defs/PriceLine"}},
+    "out_the_door":   {"$ref": "common.json#/$defs/Money"},
+    "expires_at":     {"type": "string", "format": "date-time"},
+    "round":          {"type": "integer", "minimum": 1, "maximum": 20},
+    "state":          {"$ref": "common.json#/$defs/NegotiationState"}
+  }
+}
