@@ -1,7 +1,7 @@
 # DMC-12 Specification
 
-**Version:** 0.1.0 (Draft)
-**Date:** 2026-04-21
+**Version:** 0.2.0
+**Date:** 2026-04-26
 **Status:** Reference implementation at Mark Miller Subaru Midtown.
 
 DMC-12 is an automotive extension set to the
@@ -10,10 +10,11 @@ UCP standardizes agent discovery (`/.well-known/ucp`), transport (MCP +
 A2A), and payment mandates (AP2). DMC-12 defines the capabilities a
 dealership agent surface needs on top of that base: VIN-level inventory,
 asking-price quotes, soft reservations, and deal hand-off to a live sales
-manager. It also stubs the automotive-specific capabilities (OTD pricing,
-trade intake, test-drive, F&I menu, return policy) that require DMS writes
-to implement but can be declared on a manifest as capabilities are brought
-online.
+manager. v0.2 adds per-VIN negotiation policies and itemized pricing
+disclosure on top of that base. It also stubs the automotive-specific
+capabilities (trade intake, test-drive, F&I menu, return policy) that
+require DMS writes to implement but can be declared on a manifest as
+capabilities are brought online.
 
 ## 1. Scope
 
@@ -40,7 +41,7 @@ DMC-12 capabilities extend two UCP core capabilities:
 |---|---|---|
 | `dev.ucp.shopping.catalog` | `ai.dmc12.automotive.inventory` *(implemented v0.1)* | Adds VIN, stock #, condition, mileage, drivetrain, body_style, days_on_lot. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented v0.1)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
-| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.negotiation` + `.pricing_disclosure` *(draft — v0.2)* | Negotiation publishes per-VIN policy types (`fixed` / `stepwise` / `bestoffer`) and offer/counter/acceptance/rejection envelopes. Pricing disclosure publishes itemized price lines with `kind` × `payee` tagging plus an OTD estimate. |
+| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.negotiation` + `.pricing_disclosure` *(implemented v0.2)* | Negotiation publishes per-VIN policy types (`fixed` / `stepwise` / `bestoffer`) and offer/counter/acceptance/rejection envelopes. Pricing disclosure publishes itemized price lines with `kind` × `payee` tagging plus an OTD estimate. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.trade_intake` *(stub — v0.3+)* | Trade-in intake also extends checkout. Schema is published as a stub so it shows up in capability indexing; `additionalProperties: false` prevents accidental PII leakage through an undefined surface. |
 | *(none — new namespace)* | `ai.dmc12.automotive.test_drive` + `.fni_menu` + `.return_policy` *(stub — v0.3+)* | Out-of-band from UCP checkout; they describe the retail wrapper around the vehicle sale rather than the transaction itself. |
 
@@ -224,17 +225,16 @@ Lake City, UT:
   the actual endpoint from the dealer's published UCP well-known URL
   rather than the example file.
 
-## 10. v0.2 Additions (Draft)
+## 10. v0.2 (Current Release)
 
 DMC-12 v0.2 introduces two new capabilities that replace what v0.1
-deferred. Both are draft and may evolve before the v0.2 tag ships;
-schemas live alongside the v0.1 schemas at
-[`schemas/`](./schemas/).
+deferred. Both shipped in the v0.2 release (2026-04-26); schemas live
+alongside the v0.1 schemas at [`schemas/`](./schemas/).
 
 | Capability | Version | Status | Schemas | Spec |
 |---|---|---|---|---|
-| `ai.dmc12.automotive.negotiation` | 0.1.0 | draft | [`negotiation_policy.json`](./schemas/negotiation_policy.json), [`offer.json`](./schemas/offer.json), [`counter.json`](./schemas/counter.json), [`acceptance.json`](./schemas/acceptance.json), [`rejection.json`](./schemas/rejection.json) | [`capabilities/negotiation.md`](./capabilities/negotiation.md) |
-| `ai.dmc12.automotive.pricing_disclosure` | 0.1.0 | draft | [`pricing_disclosure.json`](./schemas/pricing_disclosure.json) | [`capabilities/pricing-disclosure.md`](./capabilities/pricing-disclosure.md) |
+| `ai.dmc12.automotive.negotiation` | 0.1.0 | implemented | [`negotiation_policy.json`](./schemas/negotiation_policy.json), [`offer.json`](./schemas/offer.json), [`counter.json`](./schemas/counter.json), [`acceptance.json`](./schemas/acceptance.json), [`rejection.json`](./schemas/rejection.json) | [`capabilities/negotiation.md`](./capabilities/negotiation.md) |
+| `ai.dmc12.automotive.pricing_disclosure` | 0.1.0 | implemented | [`pricing_disclosure.json`](./schemas/pricing_disclosure.json) | [`capabilities/pricing-disclosure.md`](./capabilities/pricing-disclosure.md) |
 
 Shared `$defs` (Money, FeePayee, FeeKind, PriceLine, FeeRule,
 NegotiationState, RejectionReason) live in
@@ -243,10 +243,11 @@ NegotiationState, RejectionReason) live in
 
 The v0.1 stub `otd_pricing` (under the prior namespace) is retired in
 v0.2: the `otd-pricing.md` capability doc was renamed to
-`pricing-disclosure.md` (promoted from `stub` to `draft`) and
-`otd-pricing.json` was deleted in favor of `pricing_disclosure.json`.
-Implementations migrating from v0.1 should replace any `otd_pricing`
-references with `ai.dmc12.automotive.pricing_disclosure`.
+`pricing-disclosure.md` and promoted from `stub` (v0.1) through `draft`
+(pre-release) to `implemented` (v0.2 release); `otd-pricing.json` was
+deleted in favor of `pricing_disclosure.json`. Implementations migrating
+from v0.1 should replace any `otd_pricing` references with
+`ai.dmc12.automotive.pricing_disclosure`.
 
 ## 11. Authors
 

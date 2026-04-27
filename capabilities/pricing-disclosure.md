@@ -1,7 +1,7 @@
 ---
 capability: ai.dmc12.automotive.pricing_disclosure
 version: 0.1.0
-status: draft
+status: implemented
 authors:
   - ben-reuling
   - chris-hudson
@@ -11,7 +11,7 @@ authors:
 
 **Capability:** `ai.dmc12.automotive.pricing_disclosure`
 **Version:** `0.1.0`
-**Status:** draft (was `stub` as `otd-pricing` in v0.1)
+**Status:** implemented (was `stub` as `otd-pricing` in v0.1, `draft` at v0.2 cut)
 **Schema:** [`schemas/pricing_disclosure.json`](https://dmc12.ai/schemas/pricing_disclosure.json)
 
 ## Summary
