@@ -1,44 +1,38 @@
 ---
-capability: org.dmc12.automotive.otd_pricing
+capability: ai.dmc12.automotive.pricing_disclosure
 version: 0.1.0
-status: stub
-extends: dev.ucp.shopping.checkout
+status: draft
 authors:
   - ben-reuling
   - chris-hudson
 ---
 
-# org.dmc12.automotive.otd_pricing (STUB — v0.2+)
+# pricing-disclosure
 
-**Status: Not yet implemented.** Do NOT declare this capability on a UCP
-manifest until the reference implementation ships.
+**Capability:** `ai.dmc12.automotive.pricing_disclosure`
+**Version:** `0.1.0`
+**Status:** draft (was `stub` as `otd-pricing` in v0.1)
+**Schema:** [`schemas/pricing_disclosure.json`](https://dmc12.ai/schemas/pricing_disclosure.json)
 
-Returns a fully-itemized out-the-door (OTD) price for a specific VIN,
-including:
+## Summary
 
-- Taxes (state, city, county) based on a buyer ZIP
-- Dealer doc fee (compliance-capped per state)
-- DMV / title / registration fees
-- Optional add-ons (paint protection, wheel locks, etc.)
-- Finance & insurance products (cross-reference `fni_menu` if available)
+`get_pricing_disclosure(vin)` returns an itemized breakdown of price lines (vehicle, taxes, doc fees, title, registration, etc.), each tagged with a `kind` and `payee`, plus a subtotal, taxes total, fees total, and out-the-door estimate.
 
-The `asking_price` field on the inventory capability is the listed price.
-The OTD capability exists because the "real" price — the signed-on-line
-price — is a multi-line itemized calculation that agents cannot derive
-from public data.
+The disclosure is explicitly marked `estimate: true` by default. It is not a binding offer — that lives on the (separate) `offer.json` schema. The `disclosure_form_url` slot is where a state-mandated transaction disclosure form (Utah HB0194 or equivalent) links from.
 
-## Why this is a separate capability (not bundled into quote)
+## Tool (DMC-12-conformant servers SHOULD expose)
 
-Taxes and DMV fees require the buyer's ZIP and, for some states, whether
-the vehicle leaves the state. An anonymous quote cannot compute OTD; an
-agent with consent (AP2 Intent Mandate) or explicit `customer_contact`
-can.
+| Tool | Required scope | Input | Output |
+|---|---|---|---|
+| `get_pricing_disclosure` | `pricing:read` (public-rail readable) | `vin` | `pricing_disclosure.json` |
 
-## Open design questions (addressed in v0.2 PR)
+## Public rail
 
-1. Per-state tax engine. Where does the merchant source authoritative
-   tax tables?
-2. Agent-visible vs. not-visible line items. Should dealer add-ons that
-   the customer hasn't opted into appear in the OTD response?
-3. Doc-fee cap enforcement. Some states (NY, TX, CA) cap doc fees by
-   statute — the manifest MAY declare its capped rate.
+Unlike negotiation tools, `get_pricing_disclosure` is callable on the public rail. The legal posture: an itemized, structured, non-binding disclosure published at the buyer-agent inquiry moment is the right surface for state UDAP exposure (the FTC's CARS Rule was vacated 2025-01-27 and formally withdrawn from the Federal Register 2026-02-12, leaving state law as the operative bar).
+
+## Field semantics
+
+- `price_lines`: array of `PriceLine` (each has `label`, `kind` ∈ `{vehicle_price, tax, title, registration, doc, addon, transport, rebate, discount, trade_credit, down_payment, lien_payoff, interest}`, `payee` ∈ `{government, dealer, manufacturer, third_party}`, `amount`, optional `statutory_basis`, `negotiable: bool`).
+- `jurisdiction`: ISO 3166-2 (e.g., `US-UT`).
+- `estimate: true` by default; setting `false` requires the dealer to commit to the OTD total.
+- `disclosure_form_url`: optional URL to a state-mandated disclosure form.
