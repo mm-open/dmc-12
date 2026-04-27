@@ -8,10 +8,10 @@
 
 DMC-12 defines the capabilities a dealership agent surface needs that the
 UCP core does not cover: VIN-level inventory, asking-price quotes, soft
-reservations, deal hand-off to a human sales manager, and (forthcoming) the
-out-the-door pricing, trade-in intake, test-drive scheduling, F&I menu, and
-return-policy extensions that make retail vehicle commerce distinct from
-physical-goods checkout.
+reservations, deal hand-off to a human sales manager, per-VIN negotiation
+policies, itemized pricing disclosure, and (forthcoming) the trade-in
+intake, test-drive scheduling, F&I menu, and return-policy extensions that
+make retail vehicle commerce distinct from physical-goods checkout.
 
 - **Landing page:** <https://dmc-12.ai>
 - **Spec:** [`SPEC.md`](./SPEC.md) — canonical spec served at <https://dmc12.ai/specification/> (Cloudflare Worker proxy → this repo's `main` branch)
@@ -48,8 +48,8 @@ capabilities publish `payment.handlers: []` until AP2 lands.
 
 ## Status
 
-**v0.1 (Draft, 2026-04-21).** Reference implementation in production at
-Mark Miller Subaru Midtown (Salt Lake City, UT).
+**v0.2 (Current Release, 2026-04-26).** Reference implementation in
+production at Mark Miller Subaru Midtown (Salt Lake City, UT).
 
 Capabilities implemented in v0.1:
 
@@ -58,7 +58,7 @@ Capabilities implemented in v0.1:
 - `ai.dmc12.automotive.reservation` — 30-minute soft hold on a VIN
 - `ai.dmc12.automotive.deal_handoff` — hand a reservation to a live sales manager
 
-New in v0.2 (draft):
+Added in v0.2 (current release):
 
 - `ai.dmc12.automotive.negotiation` — three policies (`fixed`, `stepwise`, `bestoffer`) declared per-VIN; `submit_offer`, `submit_counter_offer`, `accept_offer`, `reject_offer` tools
 - `ai.dmc12.automotive.pricing_disclosure` — itemized price lines (vehicle, taxes, doc fees, title, registration), `out_the_door` estimate, `disclosure_form_url` slot for state-mandated forms; replaces v0.1's `otd_pricing` stub

@@ -1,7 +1,7 @@
 ---
 capability: ai.dmc12.automotive.negotiation
 version: 0.1.0
-status: draft
+status: implemented
 extends: ai.dmc12.automotive.quote
 authors:
   - ben-reuling
@@ -12,7 +12,7 @@ authors:
 
 **Capability:** `ai.dmc12.automotive.negotiation`
 **Version:** `0.1.0`
-**Status:** draft
+**Status:** implemented
 **Schema:** [`schemas/negotiation_policy.json`](https://dmc12.ai/schemas/negotiation_policy.json)
 **Extends:** `ai.dmc12.automotive.quote`
 
