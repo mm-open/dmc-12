@@ -8,6 +8,9 @@ on:
   schedule:
     # Run only on schedule (drift catches Worker config rot)
     - cron: "17 6 * * *"
+  workflow_dispatch:
+    # Manual trigger — runs the drift check on demand (e.g. after a Worker
+    # config change, without waiting for the next cron at 06:17 UTC).
 
 permissions:
   contents: read
@@ -55,8 +58,9 @@ jobs:
         run: python3 .github/workflows/check_manifest.py
 
   dmc12-ai-drift:
-    # Run only on schedule (drift catches Worker config rot)
-    if: github.event_name == 'schedule'
+    # Drift check runs on schedule (catches Worker config rot) and on
+    # workflow_dispatch (manual trigger after a known change).
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: schemas
     steps:
