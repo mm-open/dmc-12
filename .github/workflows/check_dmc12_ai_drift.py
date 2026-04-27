@@ -14,7 +14,14 @@ CAPABILITIES_DIR = REPO_ROOT / 'capabilities'
 
 
 def fetch(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=10) as r:
+    # Cloudflare Bot Fight Mode on the dmc12-spec-proxy Worker zone blocks
+    # the default `Python-urllib/x.y` UA with HTTP 403. Identify ourselves
+    # so the request is allowed through.
+    req = urllib.request.Request(
+        url,
+        headers={'User-Agent': 'mm-open/dmc-12 drift-check (+https://github.com/mm-open/dmc-12)'},
+    )
+    with urllib.request.urlopen(req, timeout=10) as r:
         return r.read()
 
 
