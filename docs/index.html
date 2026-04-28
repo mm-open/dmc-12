@@ -67,11 +67,7 @@
   }
   .strip .brand .glyph {
     width: 22px; height: 22px; border-radius: 4px;
-    background: var(--ink); color: #fff;
-    display: grid; place-items: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; font-weight: 600;
-    letter-spacing: -0.02em;
+    object-fit: contain;
   }
   .strip .meta {
     color: var(--ink-mute);
@@ -706,7 +702,7 @@
 <div class="strip">
   <div class="strip-inner">
     <div class="brand">
-      <span class="glyph">MM</span>
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
       <span>Mark&nbsp;Miller&nbsp;Subaru</span>
       <span style="color:var(--line-strong); margin: 0 6px;">/</span>
       <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12</span>

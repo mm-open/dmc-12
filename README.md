@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/dmc12-mark-darkmode.png">
+    <img src="branding/dmc12-mark-blue.png" alt="DMC-12" width="160">
+  </picture>
+</p>
+
 # DMC-12
 
 **Automotive extensions to the [Universal Commerce Protocol (UCP)](https://developers.googleblog.com/en/under-the-hood-universal-commerce-protocol-ucp/).**

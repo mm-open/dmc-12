@@ -16,6 +16,11 @@
       "ai.dmc12.automotive": {
         "version": "0.2.0",
         "spec": "https://dmc12.ai/specification/SPEC.md",
+        "brand": {
+          "logo_light": "https://dmc12.ai/branding/dmc12-mark-blue.png",
+          "logo_dark": "https://dmc12.ai/branding/dmc12-mark-darkmode.png",
+          "attribution": "DMC-12 protocol mark — github.com/mm-open/dmc-12/branding"
+        },
         "mcp": {
           "endpoint": "https://mcp.dealer.example/mcp/"
         },
