@@ -629,10 +629,7 @@
   }
   footer .brand-line .glyph {
     width: 22px; height: 22px; border-radius: 4px;
-    background: var(--ink); color: #fff;
-    display: grid; place-items: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; font-weight: 600;
+    object-fit: contain;
   }
   footer .brand-line .name { font-weight: 600; font-size: 14px; }
   footer .about {
@@ -1063,7 +1060,7 @@
   <div class="wrap">
     <div class="col">
       <div class="brand-line">
-        <span class="glyph">MM</span>
+        <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
         <span class="name">Mark Miller Subaru</span>
       </div>
       <p class="about">Independent multi-store dealer group in Salt Lake City. We built our MCP&nbsp;+&nbsp;A2A&nbsp;+&nbsp;UCP surface in-house on FastAPI + Cloud Run because we thought someone should go first.</p>
