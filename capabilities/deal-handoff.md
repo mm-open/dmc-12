@@ -77,8 +77,12 @@ supplied, implementations MUST treat disclosure as implicit
 3. Send the email.
 4. Persist a hand-off record keyed by a new `handoff_token`, with
    customer contact stored only as a SHA-256 hash. Structured trade-in
-   fields, when supplied, MAY be persisted in plaintext — they describe
-   a vehicle, not a person.
+   fields (VIN, year, make, model, mileage, condition, partner-supplied
+   appraisal), when supplied, MAY be persisted in plaintext — they
+   describe a vehicle, not a person. `trade_in.description`, however, is
+   unconstrained free text; implementations SHOULD hash it the same way
+   they hash `notes` (a partner could otherwise plant PII inside the
+   description).
 5. Return a masked hand-off receipt.
 
 ## PII handling (normative)
@@ -94,8 +98,11 @@ Implementations MUST:
    Implementations SHOULD expose an admin operation to mark a hand-off
    `cancelled` and purge plaintext PII.
 
-`trade_in.*` is **not** PII (it describes a vehicle, not a person) and
-falls outside this consent gate.
+The structured `trade_in.*` fields are **not** PII (they describe a
+vehicle, not a person) and fall outside the consent gate.
+`trade_in.description` is unconstrained free text — implementations
+SHOULD treat it like `notes` for audit/persistence (hash before storing,
+keep plaintext only in the outbound dealer-ops surface).
 
 ## Status transitions
 
