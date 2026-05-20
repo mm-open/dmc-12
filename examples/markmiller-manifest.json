@@ -56,7 +56,7 @@
       },
       {
         "name": "ai.dmc12.automotive.deal_handoff",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "spec": "https://dmc12.ai/specification/deal-handoff.md",
         "schema": "https://dmc12.ai/schemas/deal-handoff.json"
       },

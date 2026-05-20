@@ -1,6 +1,6 @@
 ---
 capability: ai.dmc12.automotive.deal_handoff
-version: 0.1.0
+version: 0.1.1
 status: implemented
 extends: dev.ucp.shopping.checkout
 authors:
@@ -34,8 +34,22 @@ See [`schemas/deal-handoff.json`](https://dmc12.ai/schemas/deal-handoff.json).
 | `customer_contact.email` | string | yes | RFC 5322 email. |
 | `financing_preference` | enum | yes | `cash` \| `finance` \| `lease` \| `unknown` |
 | `trade_in_disclosed` | boolean | yes | `true` if customer is bringing a trade. |
+| `trade_in.description` | string | no | Free-text description (max 500). |
+| `trade_in.appraised_value_partner` | Money (`common.json`) | no | Partner-supplied appraisal hint — NOT binding on the dealer. |
+| `trade_in.vin` | string | no | 17-char VIN per ISO 3779. |
+| `trade_in.year` | integer | no | 1900–2100. |
+| `trade_in.make` | string | no | Max 40. |
+| `trade_in.model` | string | no | Max 80. |
+| `trade_in.mileage` | integer | no | 0–1,000,000. |
+| `trade_in.condition` | enum | no | `excellent` \| `good` \| `fair` \| `poor` |
 | `notes` | string | no | Agent-provided context, max 500 chars. |
-| `customer_consent` | boolean | yes | The customer explicitly authorized contact transfer to the dealer. |
+| `customer_consent` | boolean (const `true`) | yes | The customer explicitly authorized contact transfer to the dealer. |
+
+The whole `trade_in` object is optional, and every field inside is optional.
+An empty `trade_in: {}` is valid but a no-op. If any `trade_in` field is
+supplied, implementations MUST treat disclosure as implicit
+(`trade_in_disclosed = true`) regardless of the boolean. The partner-supplied
+`appraised_value_partner` is a hint only; the dealer re-appraises on intake.
 
 ## Output
 
@@ -57,11 +71,14 @@ See [`schemas/deal-handoff.json`](https://dmc12.ai/schemas/deal-handoff.json).
    - Reservation token + expiry
    - Agent ID + trace ID (for audit cross-reference)
    - Customer contact
-   - Financing preference + trade disclosure
+   - Financing preference + trade disclosure (and structured trade-in
+     details when supplied)
    - Agent notes
 3. Send the email.
 4. Persist a hand-off record keyed by a new `handoff_token`, with
-   customer contact stored only as a SHA-256 hash.
+   customer contact stored only as a SHA-256 hash. Structured trade-in
+   fields, when supplied, MAY be persisted in plaintext — they describe
+   a vehicle, not a person.
 5. Return a masked hand-off receipt.
 
 ## PII handling (normative)
@@ -77,6 +94,9 @@ Implementations MUST:
    Implementations SHOULD expose an admin operation to mark a hand-off
    `cancelled` and purge plaintext PII.
 
+`trade_in.*` is **not** PII (it describes a vehicle, not a person) and
+falls outside this consent gate.
+
 ## Status transitions
 
 `sent` → `acknowledged` → `closed`
@@ -90,3 +110,21 @@ dealer's sales workflow (manual today; DMS integration v0.2+).
 
 v0.1 uses a simple `customer_consent` boolean. v0.2 will require an AP2
 Intent Mandate + Cart Mandate artifact set as the consent record.
+
+## Relationship to `trade_intake`
+
+The reserved `ai.dmc12.automotive.trade_intake` capability (v0.3+) is a
+**separate** flow: a partner calls `trade_intake` first to receive a
+`trade_token`, then references that token from `deal_handoff`. The
+`trade_in` object on `deal_handoff` is the "disclose alongside the
+deal" surface and remains useful even after `trade_intake` ships.
+
+## Changelog
+
+- **0.1.1** (2026-05-20): Added optional `trade_in` object — `description`,
+  `appraised_value_partner` (Money), `vin`, `year`, `make`, `model`,
+  `mileage`, `condition`. Backward-compatible additive change. Partner-
+  supplied appraisal is a hint, not authoritative; the dealer re-appraises
+  on intake. Implicit-disclosure rule: any populated `trade_in` field
+  forces `trade_in_disclosed = true`.
+- **0.1.0** (2026-04-21): Initial release.
