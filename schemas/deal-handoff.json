@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dmc12.ai/schemas/deal-handoff.json",
-  "title": "DMC-12 Deal Handoff Capability v0.1.0",
-  "description": "Input/output schema for ai.dmc12.automotive.deal_handoff (initiate_deal_handoff). Only DMC-12 capability that accepts customer PII.",
+  "title": "DMC-12 Deal Handoff Capability v0.1.1",
+  "description": "Input/output schema for ai.dmc12.automotive.deal_handoff (initiate_deal_handoff). Only DMC-12 capability that accepts customer PII. v0.1.1 adds an optional `trade_in` object — additive, non-breaking.",
   "type": "object",
   "properties": {
     "input": {
@@ -43,6 +43,34 @@
           "enum": ["cash", "finance", "lease", "unknown"]
         },
         "trade_in_disclosed": {"type": "boolean"},
+        "trade_in": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Optional structured trade-in disclosure. Every field is optional; an empty object is a valid no-op. If any field is supplied, implementations MUST treat disclosure as implicit (trade_in_disclosed=true) regardless of the boolean. `appraised_value_partner` is a partner-supplied hint, NOT authoritative — the dealer re-appraises on intake. v0.1.1.",
+          "properties": {
+            "description": {
+              "type": "string",
+              "maxLength": 500,
+              "description": "Free-text description (single-owner, clean Carfax, etc.)."
+            },
+            "appraised_value_partner": {
+              "$ref": "common.json#/$defs/Money",
+              "description": "Partner-supplied appraisal (KBB / MMR / Black Book / partner's own pricing stack). Hint only; not binding on the dealer."
+            },
+            "vin": {
+              "type": "string",
+              "pattern": "^[A-HJ-NPR-Z0-9]{17}$",
+              "description": "17-char VIN per ISO 3779 (I/O/Q excluded)."
+            },
+            "year": {"type": "integer", "minimum": 1900, "maximum": 2100},
+            "make": {"type": "string", "maxLength": 40},
+            "model": {"type": "string", "maxLength": 80},
+            "mileage": {"type": "integer", "minimum": 0, "maximum": 1000000},
+            "condition": {
+              "enum": ["excellent", "good", "fair", "poor"]
+            }
+          }
+        },
         "notes": {
           "type": ["string", "null"],
           "maxLength": 500,
@@ -82,6 +110,16 @@
         },
         "financing_preference": "finance",
         "trade_in_disclosed": true,
+        "trade_in": {
+          "description": "Single owner, clean Carfax, original tires.",
+          "appraised_value_partner": {"amount": 24500, "currency": "USD"},
+          "vin": "JF2SKADC5NH123456",
+          "year": 2022,
+          "make": "Subaru",
+          "model": "Forester Premium",
+          "mileage": 38400,
+          "condition": "good"
+        },
         "notes": "Customer prefers Saturday pickup.",
         "customer_consent": true
       },
