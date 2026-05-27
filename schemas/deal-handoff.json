@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dmc12.ai/schemas/deal-handoff.json",
-  "title": "DMC-12 Deal Handoff Capability v0.1.1",
-  "description": "Input/output schema for ai.dmc12.automotive.deal_handoff (initiate_deal_handoff). Only DMC-12 capability that accepts customer PII. v0.1.1 adds an optional `trade_in` object — additive, non-breaking.",
+  "title": "DMC-12 Deal Handoff Capability v0.1.2",
+  "description": "Input/output schema for ai.dmc12.automotive.deal_handoff (initiate_deal_handoff). Only DMC-12 capability that accepts customer PII. v0.1.1 added an optional `trade_in` object; v0.1.2 adds an optional channel-scoped `consent` object. Both are additive and non-breaking — the bare `customer_consent` boolean is unchanged.",
   "type": "object",
   "properties": {
     "input": {
@@ -79,6 +79,31 @@
         "customer_consent": {
           "const": true,
           "description": "Customer explicitly authorized contact transfer. MUST be true — the schema rejects false so validators cannot accept a no-consent PII hand-off."
+        },
+        "consent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allowed_channels", "expires_at"],
+          "description": "OPTIONAL channel-scoped consent (v0.1.2). Records WHICH contact channels the customer authorized and WHEN that authorization lapses. The bare `customer_consent` boolean above remains the floor and is unchanged — sending only the boolean behaves exactly as pre-v0.1.2. `expires_at` IS enforced (a hand-off presented with an expired consent is rejected, error_code CONSENT_INVALID); `allowed_channels` are advisory (recorded + surfaced to dealer-ops, never used to gate contact). `consent_text` is unconstrained free text and is hashed before audit/persistence like `notes`. Design informed by AAP (autoagentprotocol.org); see SPEC.md §13.",
+          "properties": {
+            "allowed_channels": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"enum": ["email", "phone", "sms"]},
+              "description": "Non-empty, unique set of channels the customer authorized for contact. Advisory."
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "When the consent lapses. MUST be a timezone-aware ISO-8601 timestamp; a hand-off after this instant is rejected (CONSENT_INVALID)."
+            },
+            "consent_text": {
+              "type": ["string", "null"],
+              "maxLength": 2000,
+              "description": "Optional verbatim authorization language. Free text — hashed before audit/persistence (may carry PII)."
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -129,6 +154,31 @@
         "sent_at": "2026-04-21T18:10:00Z",
         "status": "sent",
         "next_steps": "A sales manager will call the customer within 30 minutes."
+      }
+    },
+    {
+      "input": {
+        "reservation_token": "rsv_01HZ9QK7M3V8P2S6T4W0Y1Z3X5",
+        "customer_contact": {
+          "name": "Sam Buyer",
+          "phone": "+15555559876",
+          "email": "sam@example.com"
+        },
+        "financing_preference": "cash",
+        "trade_in_disclosed": false,
+        "customer_consent": true,
+        "consent": {
+          "allowed_channels": ["email", "phone"],
+          "expires_at": "2026-06-01T00:00:00Z",
+          "consent_text": "I authorize Mark Miller Subaru to contact me about this vehicle."
+        }
+      },
+      "output": {
+        "handoff_token": "hdo_01J0A1B2C3D4E5F6G7H8J9K0M1",
+        "sent_to_masked": "sa****@dealer.example",
+        "sent_at": "2026-05-26T17:00:00Z",
+        "status": "sent",
+        "next_steps": "A sales manager will reach out on an authorized channel within 1 business day."
       }
     }
   ]

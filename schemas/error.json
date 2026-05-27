@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dmc12.ai/schemas/error.json",
+  "title": "DMC-12 Error Taxonomy v0.1.0",
+  "description": "Shape of the error object a DMC-12 tool returns in the response body (the `data` member of the standard envelope) when a call fails. Cross-cutting — applies to every capability, not a single tool surface. The taxonomy structure (a compact code set + a `retryable` flag + a correlation `error_id`) is informed by the Auto Agent Protocol (AAP, https://autoagentprotocol.org, Apache-2.0); DMC-12 keeps its own code names. Additive + non-breaking: the legacy `error` string is preserved alongside the taxonomy fields, so pre-taxonomy consumers reading `error` keep working.",
+  "$defs": {
+    "ErrorCode": {
+      "description": "Stable, documented DMC-12 error code. Implementations map their internal error strings onto exactly one of these.",
+      "enum": [
+        "VEHICLE_NOT_FOUND",
+        "VEHICLE_UNAVAILABLE",
+        "QUOTE_NOT_FOUND",
+        "QUOTE_EXPIRED",
+        "QUOTE_STATE",
+        "RESERVATION_NOT_FOUND",
+        "RESERVATION_EXPIRED",
+        "RESERVATION_STATE",
+        "RESERVATION_CONFLICT",
+        "RESERVATION_LIMIT",
+        "OFFER_NOT_FOUND",
+        "OFFER_EXPIRED",
+        "OFFER_STATE",
+        "CONSENT_REQUIRED",
+        "CONSENT_INVALID",
+        "NOT_AUTHORIZED",
+        "VALIDATION_FAILED",
+        "RATE_LIMITED",
+        "NOT_CONFIGURED",
+        "UPSTREAM_UNAVAILABLE",
+        "INTERNAL_ERROR"
+      ]
+    }
+  },
+  "type": "object",
+  "required": ["error", "error_code", "retryable", "error_id"],
+  "properties": {
+    "error": {
+      "type": "string",
+      "description": "Legacy machine-readable error string. Stable per implementation and PRESERVED for backward compatibility — consumers written before the taxonomy read this. New consumers SHOULD switch on `error_code`."
+    },
+    "error_code": {
+      "$ref": "#/$defs/ErrorCode",
+      "description": "The DMC-12 error code this error maps to. The recommended field to branch on."
+    },
+    "retryable": {
+      "type": "boolean",
+      "description": "Whether retrying the identical request could plausibly succeed later. true for transient classes (RATE_LIMITED, UPSTREAM_UNAVAILABLE, INTERNAL_ERROR); false for deterministic ones (NOT_FOUND, VALIDATION_FAILED, NOT_AUTHORIZED, state/expiry errors)."
+    },
+    "error_id": {
+      "type": "string",
+      "description": "Opaque per-error correlation id (e.g. `err_<uuid4hex>`) for support / log correlation. Unique per occurrence; safe to surface to an end user or quote back to the merchant."
+    },
+    "message": {
+      "type": "string",
+      "description": "Optional human-readable, non-sensitive detail. MUST NOT contain PII or secrets."
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "$comment": "retryable is FIXED by error_code (SPEC §8 / capabilities/errors.md): the transient classes are retryable: true, every other code is retryable: false. This conditional makes a conformance validator reject contradictory pairings (e.g. RATE_LIMITED + retryable:false).",
+      "if": {
+        "required": ["error_code"],
+        "properties": {
+          "error_code": {
+            "enum": ["RATE_LIMITED", "UPSTREAM_UNAVAILABLE", "INTERNAL_ERROR"]
+          }
+        }
+      },
+      "then": {"properties": {"retryable": {"const": true}}},
+      "else": {"properties": {"retryable": {"const": false}}}
+    }
+  ],
+  "examples": [
+    {
+      "error": "reservation_expired",
+      "error_code": "RESERVATION_EXPIRED",
+      "retryable": false,
+      "error_id": "err_5f1c8e2a9b7d4c3e8a1f0b6d2c4e7a90",
+      "message": "reservation has expired"
+    },
+    {
+      "error": "rate_limited",
+      "error_code": "RATE_LIMITED",
+      "retryable": true,
+      "error_id": "err_9a2b7c4d1e8f0a3b6c5d4e2f1a0b9c8d",
+      "message": "rate limit exceeded; retry after the window resets"
+    }
+  ]
+}

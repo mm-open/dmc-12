@@ -55,8 +55,15 @@ capabilities publish `payment.handlers: []` until AP2 lands.
 
 ## Status
 
-**v0.2 (Current Release, 2026-04-26).** Reference implementation in
+**v0.3 (Current Release, 2026-05-26).** Reference implementation in
 production at Mark Miller Subaru Midtown (Salt Lake City, UT).
+
+Added in v0.3 (current release) — both additive and non-breaking:
+
+- `ai.dmc12.automotive.errors` — a cross-cutting error taxonomy: every tool error carries an `error_code`, a `retryable` flag, and a correlation `error_id`, layered additively over the legacy `error` string
+- `ai.dmc12.automotive.deal_handoff` → v0.1.2 — optional channel-scoped `consent` object (authorized channels + enforced expiry + verbatim text); the bare `customer_consent` boolean is unchanged
+
+Both are informed by the Auto Agent Protocol (AAP, [autoagentprotocol.org](https://autoagentprotocol.org)); see [`SPEC.md`](./SPEC.md) §13.
 
 Capabilities implemented in v0.1:
 
@@ -65,7 +72,7 @@ Capabilities implemented in v0.1:
 - `ai.dmc12.automotive.reservation` — 30-minute soft hold on a VIN
 - `ai.dmc12.automotive.deal_handoff` — hand a reservation to a live sales manager
 
-Added in v0.2 (current release):
+Added in v0.2:
 
 - `ai.dmc12.automotive.negotiation` — three policies (`fixed`, `stepwise`, `bestoffer`) declared per-VIN; `submit_offer`, `submit_counter_offer`, `accept_offer`, `reject_offer` tools
 - `ai.dmc12.automotive.pricing_disclosure` — itemized price lines (vehicle, taxes, doc fees, title, registration), `out_the_door` estimate, `disclosure_form_url` slot for state-mandated forms; replaces v0.1's `otd_pricing` stub

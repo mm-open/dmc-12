@@ -14,7 +14,7 @@
         }
       },
       "ai.dmc12.automotive": {
-        "version": "0.2.0",
+        "version": "0.3.0",
         "spec": "https://dmc12.ai/specification/SPEC.md",
         "brand": {
           "logo_light": "https://dmc12.ai/branding/dmc12-mark-blue.png",
@@ -56,7 +56,7 @@
       },
       {
         "name": "ai.dmc12.automotive.deal_handoff",
-        "version": "0.1.1",
+        "version": "0.1.2",
         "spec": "https://dmc12.ai/specification/deal-handoff.md",
         "schema": "https://dmc12.ai/schemas/deal-handoff.json"
       },
