@@ -1,6 +1,6 @@
 # DMC-12 Specification
 
-**Version:** 0.3.0
+**Version:** 0.4.0
 **Date:** 2026-05-26
 **Status:** Reference implementation at Mark Miller Subaru Midtown.
 
@@ -15,7 +15,11 @@ disclosure on top of that base. v0.3 adds two additive, non-breaking
 refinements — a cross-cutting error taxonomy
 (`ai.dmc12.automotive.errors`, §8) and channel-scoped consent on deal
 hand-off (`deal_handoff` v0.1.2) — both informed by the Auto Agent
-Protocol (AAP); see §13. It also stubs the automotive-specific
+Protocol (AAP); see §13. v0.4 adds three more additive, non-breaking
+refinements — `search_inventory` ergonomics (optional `query`,
+agent-controlled `sort_by`/`sort_order`, a `min_price` floor),
+`list_inventory` year-range filters, and an OPTIONAL out-the-door
+estimate on the `quote` output; see §14. It also stubs the automotive-specific
 capabilities (trade intake, test-drive, F&I menu, return policy) that
 require DMS writes to implement but can be declared on a manifest as
 capabilities are brought online.
@@ -43,8 +47,8 @@ DMC-12 capabilities extend two UCP core capabilities:
 
 | UCP core | DMC-12 extension (status) | Relationship |
 |---|---|---|
-| `dev.ucp.shopping.catalog` | `ai.dmc12.automotive.inventory` *(implemented v0.1)* | Adds VIN, stock #, condition, mileage, drivetrain, body_style, days_on_lot. |
-| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented; `.deal_handoff` at v0.1.2 adds optional structured `trade_in` and optional channel-scoped `consent`)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
+| `dev.ucp.shopping.catalog` | `ai.dmc12.automotive.inventory` *(implemented; capability v0.2.0 at the v0.4 cut)* | Adds VIN, stock #, condition, mileage, drivetrain, body_style, days_on_lot. v0.2.0 adds additive search/list ergonomics (optional `query`, `sort_by`/`sort_order`, `min_price`, `min_year`/`max_year`); the vehicle record is unchanged. See §14. |
+| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented; `.quote` at capability v0.3.0 adds an optional OTD estimate on output; `.deal_handoff` at v0.1.2 adds optional structured `trade_in` and optional channel-scoped `consent`)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.negotiation` + `.pricing_disclosure` *(implemented v0.2)* | Negotiation publishes per-VIN policy types (`fixed` / `stepwise` / `bestoffer`) and offer/counter/acceptance/rejection envelopes. Pricing disclosure publishes itemized price lines with `kind` × `payee` tagging plus an OTD estimate. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.trade_intake` *(stub — v0.3+)* | Trade-in intake also extends checkout. Schema is published as a stub so it shows up in capability indexing; `additionalProperties: false` prevents accidental PII leakage through an undefined surface. |
 | *(none — new namespace)* | `ai.dmc12.automotive.test_drive` + `.fni_menu` + `.return_policy` *(stub — v0.3+)* | Out-of-band from UCP checkout; they describe the retail wrapper around the vehicle sale rather than the transaction itself. |
@@ -125,6 +129,15 @@ the place to file PRs.
 Enumerated: `new`, `used`, `certified`, `rental`, `demo`. The UCP core
 `catalog.condition` field is an open string; DMC-12 constrains it to this
 enumeration.
+
+The **input** filter (`ConditionFilter` in `schemas/inventory.json`) is a
+superset: the five canonical conditions plus `any` (wildcard) and the legacy
+alias `cpo` (maps to `certified`) — seven values. A conformant deployment MAY
+accept only a subset of `ConditionFilter` at the input boundary. The Mark
+Miller reference deployment currently accepts `new` / `used` / `cpo` / `any`
+(its inventory mix carries no `certified` / `rental` / `demo` units to filter
+on); this is a deployment choice, not a spec change — the canonical filter enum
+remains the seven-value superset.
 
 ### 4.3 Mileage
 
@@ -270,7 +283,25 @@ Lake City, UT:
 
 ## 11. Release Notes
 
-### v0.3.0 — current release (2026-05-26)
+### v0.4.0 — current release (2026-05-26)
+
+v0.4 is an additive, non-breaking feature cut that reconciles the published
+spec with search/list ergonomics and OTD-on-quote groundwork already running
+in the reference implementation. Full detail in §14. In brief:
+
+- **`ai.dmc12.automotive.inventory` → capability v0.2.0** — `search_inventory`
+  gains an OPTIONAL `query` (structured-only search when omitted),
+  agent-controlled `sort_by` / `sort_order`, and a `min_price` floor;
+  `list_inventory` gains a `min_year` / `max_year` range. The vehicle record
+  (output) is unchanged. Every v0.1 input still validates.
+- **`ai.dmc12.automotive.quote` → capability v0.3.0** — the quote output gains
+  an OPTIONAL `out_the_door` (`Money`) estimate plus `out_the_door_estimate:
+  true`, emitted only when the merchant has pricing disclosure enabled with a
+  live fee schedule. Absent otherwise; a v0.1/v0.2 quote payload still validates.
+
+No new tools, no namespace change, no breaking change.
+
+### v0.3.0 (2026-05-26)
 
 v0.3 is an additive, non-breaking feature cut:
 
@@ -345,3 +376,51 @@ ADF/XML) lives at
 [`interop/aap-lead-submit-mapping.md`](./interop/aap-lead-submit-mapping.md).
 AAP's license does not require attribution; we credit it because the designs
 are good and the cross-pollination is principled.
+
+## 14. v0.4 Additions
+
+v0.4 is an additive, non-breaking cut. It publishes input/output refinements
+that the reference implementation already shipped service-local, so a
+spec-following agent or another dealer's fork can use the same fields without
+reading the live Pydantic models. All three additions are OPTIONAL — strict
+validation (`additionalProperties: false`) is preserved on every affected
+schema, and every pre-v0.4 payload still validates.
+
+### 14.1 `search_inventory` ergonomics (`inventory` → 0.2.0)
+
+- **`query` is now OPTIONAL.** With a `query`, results are semantically ranked
+  (relevance). With no `query`, the server runs a purely structured filter +
+  sort — no semantic-ranking round-trip — and the per-record `similarity` is
+  `null`. (Previously `query` was required.)
+- **`sort_by`** — `relevance` (default) \| `price` \| `mileage` \| `year`.
+  `relevance` requires a `query`; with no query it normalizes to `price`.
+- **`sort_order`** — `asc` (default) \| `desc`.
+- **`min_price`** — lower price bound (search already accepted `max_price`).
+
+### 14.2 `list_inventory` year range (`inventory` → 0.2.0)
+
+- **`min_year` / `max_year`** — an inclusive model-year range, complementing
+  the existing exact `year` filter (use the range fields for "2020 and newer"
+  style queries).
+
+### 14.3 Availability + filter ordering (clarification, not a schema change)
+
+Both `search_inventory` and `list_inventory` return only vehicles whose
+`status` is `available`; sold, pending, and reserved units are excluded
+server-side and never appear in results. Structured filters (`condition`, year
+range, price window, `max_mileage`) are evaluated **before** the result set is
+truncated to `limit`, so a filtered query returns up to `limit` matching rows
+when enough exist.
+
+### 14.4 Out-the-door estimate on `quote` output (`quote` → 0.3.0)
+
+The `request_quote` output MAY carry an OPTIONAL `out_the_door` (`Money`,
+`$ref` to `common.json#/$defs/Money`) plus `out_the_door_estimate: true`. This
+is a **best-effort, non-binding estimate** derived from `quoted_price` plus the
+merchant's published fee schedule (tax + doc + title + registration) — it is
+not a second firm price; `quoted_price` stays the only committed figure. Both
+fields are present only when the merchant has pricing disclosure enabled with a
+live fee schedule, and are **omitted** otherwise (the Mark Miller reference
+deployment runs with disclosure off, so it emits neither today). Their absence
+is valid under the v0.3 quote schema. For the itemized line-item breakdown, see
+`ai.dmc12.automotive.pricing_disclosure`.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dmc12.ai/schemas/inventory.json",
-  "title": "DMC-12 Inventory Capability v0.1.0",
+  "title": "DMC-12 Inventory Capability v0.2.0",
   "description": "Vehicle record schema for ai.dmc12.automotive.inventory. Extends dev.ucp.shopping.catalog.",
   "type": "object",
   "properties": {
@@ -12,16 +12,31 @@
         {
           "title": "search_inventory",
           "type": "object",
-          "required": ["tool", "query"],
+          "required": ["tool"],
           "additionalProperties": false,
           "properties": {
             "tool": {"const": "search_inventory"},
-            "query": {"type": "string", "minLength": 1, "maxLength": 500},
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "description": "Natural-language search string. OPTIONAL: when omitted the server runs a purely structured filter+sort with no semantic ranking (similarity is null); when supplied results are ranked by relevance."
+            },
             "min_year": {"type": "integer", "minimum": 1990, "maximum": 2030},
             "max_year": {"type": "integer", "minimum": 1990, "maximum": 2030},
+            "min_price": {"type": "number", "minimum": 0, "maximum": 999999},
             "max_price": {"type": "number", "minimum": 0, "maximum": 999999},
             "max_mileage": {"type": "integer", "minimum": 0, "maximum": 500000},
             "condition": {"$ref": "#/$defs/ConditionFilter"},
+            "sort_by": {
+              "enum": ["relevance", "price", "mileage", "year"],
+              "default": "relevance",
+              "description": "Ordering key. `relevance` requires a `query`; with no query it normalizes to `price`."
+            },
+            "sort_order": {
+              "enum": ["asc", "desc"],
+              "default": "asc"
+            },
             "limit": {"type": "integer", "minimum": 1, "maximum": 25, "default": 10}
           }
         },
@@ -43,6 +58,8 @@
           "properties": {
             "tool": {"const": "list_inventory"},
             "year": {"type": "integer", "minimum": 1990, "maximum": 2030},
+            "min_year": {"type": "integer", "minimum": 1990, "maximum": 2030},
+            "max_year": {"type": "integer", "minimum": 1990, "maximum": 2030},
             "make": {"type": "string", "maxLength": 40},
             "model": {"type": "string", "maxLength": 60},
             "trim": {"type": "string", "maxLength": 80},
