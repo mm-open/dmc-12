@@ -200,11 +200,12 @@ Implementations MUST:
 DMC-12 follows [Semantic Versioning 2.0.0](https://semver.org/). The
 manifest's capability-level `version` field is independent of this
 document's version — a capability at v0.1.0 may be published against
-DMC-12 spec v0.1.0, v0.2.0, etc. once the backward-compat rules below are
-clarified in v1.0.0.
+DMC-12 spec v0.1.0, v0.2.0, etc.
 
-**Breaking changes** in v0.x are allowed at any minor version bump while
-this specification is in Draft. The first non-Draft release will be v1.0.0.
+**Breaking changes** are permitted at any minor version bump during the
+0.x series, per SemVer's pre-1.0 rules. v1.0.0 will mark the first
+backward-compatibility commitment; after it, breaking changes require a
+major version bump.
 
 ## 9. Reference Implementation
 

@@ -571,6 +571,11 @@
   }
   .verify-row a.url:hover { text-decoration: underline; text-underline-offset: 3px; }
 
+  /* Releases */
+  .release-list { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .release-list .what .ver { font-family: 'JetBrains Mono', monospace; color: var(--accent-ink); font-weight: 600; }
+  .release-list .summary { font-size: 14px; color: var(--ink); line-height: 1.55; }
+
   /* Fork */
   .fork {
     background: var(--bg-soft);
@@ -1035,6 +1040,51 @@
         <a class="url" href="https://dmc12.ai/schemas/inventory.json" target="_blank" rel="noopener">
           dmc12.ai/schemas/{capability}.json
         </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RELEASES -->
+<section id="releases">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="num">05 / Releases</div>
+      </div>
+      <div>
+        <h2>Version history.</h2>
+        <p class="sub">DMC-12 follows SemVer 2.0.0. Breaking changes are allowed at any minor bump during the 0.x series; v1.0.0 will be the first backward-compatibility commitment. Each version below is tagged in <span class="mono">mm-open/dmc-12</span>.</p>
+      </div>
+    </div>
+
+    <div class="release-list">
+      <div class="verify-row">
+        <div class="what">
+          <span class="ver">v0.2.0</span>
+          <span class="hint">2026-04-26 · current release</span>
+        </div>
+        <div class="summary">
+          Namespace migration <span class="mono">org.dmc12.*</span> → <span class="mono">ai.dmc12.automotive.*</span>; adds the <span class="mono">negotiation</span> and <span class="mono">pricing_disclosure</span> capabilities (itemized price lines with <span class="mono">kind</span> × <span class="mono">payee</span> tagging plus an out-the-door estimate). Canonical surface grows to 14 tools.
+        </div>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          <span class="ver">v0.1.1</span>
+          <span class="hint">2026-05-20</span>
+        </div>
+        <div class="summary">
+          Optional structured <span class="mono">trade_in</span> object on <span class="mono">initiate_deal_handoff</span> (8 fields, including a partner-supplied appraisal hint). Additive and non-breaking.
+        </div>
+      </div>
+      <div class="verify-row">
+        <div class="what">
+          <span class="ver">v0.1.0</span>
+          <span class="hint">2026-04-21 · initial release</span>
+        </div>
+        <div class="summary">
+          First DMC-12 cut: an automotive extension set over UCP — VIN-level inventory, asking-price quotes, soft reservations, and deal hand-off to a live sales team. Reference implementation live at Mark Miller Subaru.
+        </div>
       </div>
     </div>
   </div>

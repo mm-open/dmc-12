@@ -7,9 +7,9 @@ today and how it may evolve.
 
 ## Status
 
-- **Current version:** v0.1.0 (Draft).
-- **v0.x** is considered Draft. Breaking changes are permitted at any
-  minor-version bump while in Draft.
+- **Current version:** v0.2.0 (current release).
+- **v0.x** follows SemVer's pre-1.0 rules: breaking changes are permitted
+  at any minor-version bump.
 - **v1.0.0** will be the first stable release. After v1.0, backward
   compatibility rules follow SemVer 2.0.0 strictly.
 
