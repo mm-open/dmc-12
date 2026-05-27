@@ -46,7 +46,11 @@
           "description": "Present (and always `true`) iff `out_the_door` is present. Flags the OTD figure as a non-binding estimate, not a firm price."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "dependentRequired": {
+        "out_the_door": ["out_the_door_estimate"],
+        "out_the_door_estimate": ["out_the_door"]
+      }
     }
   },
   "required": ["input", "output"],
