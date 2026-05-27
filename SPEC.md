@@ -1,7 +1,7 @@
 # DMC-12 Specification
 
-**Version:** 0.2.0
-**Date:** 2026-04-26
+**Version:** 0.3.0
+**Date:** 2026-05-26
 **Status:** Reference implementation at Mark Miller Subaru Midtown.
 
 DMC-12 is an automotive extension set to the
@@ -11,7 +11,11 @@ A2A), and payment mandates (AP2). DMC-12 defines the capabilities a
 dealership agent surface needs on top of that base: VIN-level inventory,
 asking-price quotes, soft reservations, and deal hand-off to a live sales
 manager. v0.2 adds per-VIN negotiation policies and itemized pricing
-disclosure on top of that base. It also stubs the automotive-specific
+disclosure on top of that base. v0.3 adds two additive, non-breaking
+refinements — a cross-cutting error taxonomy
+(`ai.dmc12.automotive.errors`, §8) and channel-scoped consent on deal
+hand-off (`deal_handoff` v0.1.2) — both informed by the Auto Agent
+Protocol (AAP); see §13. It also stubs the automotive-specific
 capabilities (trade intake, test-drive, F&I menu, return policy) that
 require DMS writes to implement but can be declared on a manifest as
 capabilities are brought online.
@@ -40,10 +44,11 @@ DMC-12 capabilities extend two UCP core capabilities:
 | UCP core | DMC-12 extension (status) | Relationship |
 |---|---|---|
 | `dev.ucp.shopping.catalog` | `ai.dmc12.automotive.inventory` *(implemented v0.1)* | Adds VIN, stock #, condition, mileage, drivetrain, body_style, days_on_lot. |
-| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented; `.deal_handoff` at v0.1.1 adds optional structured `trade_in`)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
+| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented; `.deal_handoff` at v0.1.2 adds optional structured `trade_in` and optional channel-scoped `consent`)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.negotiation` + `.pricing_disclosure` *(implemented v0.2)* | Negotiation publishes per-VIN policy types (`fixed` / `stepwise` / `bestoffer`) and offer/counter/acceptance/rejection envelopes. Pricing disclosure publishes itemized price lines with `kind` × `payee` tagging plus an OTD estimate. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.trade_intake` *(stub — v0.3+)* | Trade-in intake also extends checkout. Schema is published as a stub so it shows up in capability indexing; `additionalProperties: false` prevents accidental PII leakage through an undefined surface. |
 | *(none — new namespace)* | `ai.dmc12.automotive.test_drive` + `.fni_menu` + `.return_policy` *(stub — v0.3+)* | Out-of-band from UCP checkout; they describe the retail wrapper around the vehicle sale rather than the transaction itself. |
+| *(cross-cutting — every capability)* | `ai.dmc12.automotive.errors` *(implemented v0.3)* | A shared error taxonomy — every tool error carries `error_code` + `retryable` + `error_id`. No tool surface of its own; see §8. |
 
 AP2 Intent / Cart / Payment mandates are **not** implemented in v0.1. A
 DMC-12 `deal_handoff` call records a Boolean `customer_consent` artifact
@@ -191,11 +196,48 @@ Implementations MUST:
    `deal_handoff` tool input, never in other DMC-12 capabilities.
 2. Redact the PII before writing to any audit log (hash + last-4 of phone
    only).
-3. Record a `customer_consent` boolean (v0.1) or an AP2 Intent Mandate
-   artifact (v0.2+) alongside the hand-off.
+3. Record a `customer_consent` boolean (v0.1) alongside the hand-off,
+   OPTIONALLY enriched with a channel-scoped `consent` object (v0.1.2:
+   `allowed_channels` + `expires_at` + optional `consent_text`). The bare
+   boolean remains the floor; an AP2 Intent Mandate artifact is the future
+   direction. `consent_text` is unconstrained free text and MUST be hashed
+   before audit/persistence (treat it like `notes`).
 4. Honor deletion requests per the merchant's privacy policy.
 
-## 8. Versioning
+## 8. Error Taxonomy
+
+DMC-12 defines a cross-cutting **error taxonomy** so an agent can branch on a
+stable code and a `retryable` hint instead of pattern-matching free-text
+strings. It is published as the `ai.dmc12.automotive.errors` capability
+(no tool surface of its own); the full code table lives in
+[`capabilities/errors.md`](./capabilities/errors.md) and the shape in
+[`schemas/error.json`](./schemas/error.json).
+
+When a tool call fails, the response envelope's data member is an error
+object with four required fields:
+
+- **`error`** — the legacy machine-readable string, **preserved** for
+  backward compatibility. Pre-taxonomy consumers read this.
+- **`error_code`** — one of the documented DMC-12 codes (`VEHICLE_NOT_FOUND`,
+  `QUOTE_EXPIRED`, `RESERVATION_CONFLICT`, `CONSENT_INVALID`,
+  `NOT_AUTHORIZED`, `RATE_LIMITED`, `INTERNAL_ERROR`, …). The recommended
+  field to branch on.
+- **`retryable`** — boolean; `true` only for transient classes
+  (`RATE_LIMITED`, `UPSTREAM_UNAVAILABLE`, `INTERNAL_ERROR`).
+- **`error_id`** — an opaque per-occurrence correlation id for support /
+  log lookup, free of PII.
+
+The three taxonomy fields are **additive**: the legacy `error` string is
+never removed or repurposed, so a consumer written before the taxonomy keeps
+working byte-for-byte. Any internal error string an implementation has not
+mapped MUST resolve to `INTERNAL_ERROR` / `retryable: true`, so a new error
+never escapes unclassified.
+
+> The taxonomy structure (compact code set + `retryable` + `error_id`) is
+> informed by the Auto Agent Protocol (AAP); DMC-12 keeps its own code names.
+> See §13.
+
+## 9. Versioning
 
 DMC-12 follows [Semantic Versioning 2.0.0](https://semver.org/). The
 manifest's capability-level `version` field is independent of this
@@ -207,7 +249,7 @@ DMC-12 spec v0.1.0, v0.2.0, etc.
 backward-compatibility commitment; after it, breaking changes require a
 major version bump.
 
-## 9. Reference Implementation
+## 10. Reference Implementation
 
 The reference implementation runs at Mark Miller Subaru Midtown, Salt
 Lake City, UT:
@@ -226,9 +268,28 @@ Lake City, UT:
   the actual endpoint from the dealer's published UCP well-known URL
   rather than the example file.
 
-## 10. v0.2 (Current Release)
+## 11. Release Notes
 
-DMC-12 v0.2 introduces two new capabilities that replace what v0.1
+### v0.3.0 — current release (2026-05-26)
+
+v0.3 is an additive, non-breaking feature cut:
+
+- **`ai.dmc12.automotive.errors`** *(new, v0.1.0)* — a cross-cutting error
+  taxonomy (§8). Every tool error gains an `error_code`, a `retryable` flag,
+  and a correlation `error_id`, layered additively over the legacy `error`
+  string.
+- **`ai.dmc12.automotive.deal_handoff` → v0.1.2** — adds an OPTIONAL
+  channel-scoped `consent` object (`allowed_channels`, `expires_at`, optional
+  `consent_text`). `expires_at` is enforced (an expired consent is rejected
+  with `CONSENT_INVALID`); `allowed_channels` are advisory. The bare
+  `customer_consent` boolean is unchanged — callers that send only the boolean
+  behave exactly as before.
+
+Both refinements are informed by the Auto Agent Protocol (AAP); see §13.
+
+### v0.2.0 (2026-04-26)
+
+DMC-12 v0.2 introduced two new capabilities that replaced what v0.1
 deferred. Both shipped in the v0.2 release (2026-04-26); schemas live
 alongside the v0.1 schemas at [`schemas/`](./schemas/).
 
@@ -250,7 +311,7 @@ deleted in favor of `pricing_disclosure.json`. Implementations migrating
 from v0.1 should replace any `otd_pricing` references with
 `ai.dmc12.automotive.pricing_disclosure`.
 
-## 11. Authors
+## 12. Authors
 
 - Ben Reuling — Mark Miller Subaru (reference implementation, spec
   editor)
@@ -258,3 +319,29 @@ from v0.1 should replace any `otd_pricing` references with
   capability scoping)
 
 Individual capability front-matter credits additional contributors.
+
+## 13. Acknowledgments and Prior Art
+
+DMC-12 is built on, and aligned with, the open agent-commerce ecosystem.
+Beyond the UCP / MCP / A2A / AP2 lineage described in §2 and `GOVERNANCE.md`,
+two v0.3 refinements were directly informed by a peer standard:
+
+- **Auto Agent Protocol (AAP)** — <https://autoagentprotocol.org>,
+  Apache-2.0. AAP is a strict A2A v1.0 profile for automotive agents. Its
+  approach to two problems shaped DMC-12 v0.3:
+  1. **Error taxonomy** (§8) — the idea of pairing a compact, documented code
+     set with a `retryable` flag and a per-error correlation id. DMC-12 keeps
+     its own code names and response-body placement; we adopted the
+     *structure*, not the strings.
+  2. **Channel-scoped consent** — the idea of recording *which* contact
+     channels a customer authorized and *when* that authorization lapses,
+     rather than a bare boolean. DMC-12 implements this as the OPTIONAL
+     `consent` object on `deal_handoff` v0.1.2, with its own field names and a
+     hard non-breaking guarantee for the existing boolean.
+
+DMC-12 and AAP are alignable peer standards: a doc-only field mapping between
+`initiate_deal_handoff` and AAP's `lead.submit` (both ultimately targeting
+ADF/XML) lives at
+[`interop/aap-lead-submit-mapping.md`](./interop/aap-lead-submit-mapping.md).
+AAP's license does not require attribution; we credit it because the designs
+are good and the cross-pollination is principled.

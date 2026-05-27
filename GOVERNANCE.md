@@ -7,7 +7,7 @@ today and how it may evolve.
 
 ## Status
 
-- **Current version:** v0.2.0 (current release).
+- **Current version:** v0.3.0 (current release).
 - **v0.x** follows SemVer's pre-1.0 rules: breaking changes are permitted
   at any minor-version bump.
 - **v1.0.0** will be the first stable release. After v1.0, backward
@@ -67,6 +67,15 @@ DMC-12 is designed to slot into the existing agent-commerce ecosystem:
 - **AP2** (Agent Payments Protocol) — Google-led. DMC-12 v0.1 does not
   yet implement AP2 mandates; v0.2+ will define the automotive-specific
   Cart Mandate line items (see `SPEC.md §2.1`).
+- **AAP** (Auto Agent Protocol) — <https://autoagentprotocol.org>,
+  Apache-2.0. A peer automotive agent standard (a strict A2A v1.0 profile).
+  DMC-12 stays a separate spec with its own vocabulary, but cross-pollinates
+  with AAP where its designs are strong: v0.3's error taxonomy (`SPEC.md §8`)
+  and channel-scoped consent (`deal_handoff` v0.1.2) are AAP-informed, and a
+  doc-only interop mapping between `initiate_deal_handoff` and AAP's
+  `lead.submit` lives at
+  [`interop/aap-lead-submit-mapping.md`](./interop/aap-lead-submit-mapping.md).
+  See `SPEC.md §13` for the full acknowledgment.
 
 Donation of DMC-12 itself to a neutral foundation (Linux Foundation
 Agentic AI Foundation or similar) is under consideration post-v1.0.
