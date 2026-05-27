@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Inventory — DMC-12 vendor integration guide</title>
+<meta name="description" content="The four DMC-12 inventory read tools: search_inventory, list_inventory, get_vehicle_by_vin, check_availability — field reference, request and response examples." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/dmc12.css">
+</head>
+<body>
+
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
+      <a href="../index.html">Mark&nbsp;Miller&nbsp;Subaru</a>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12 guide</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>DMC-12 v0.4 · 10 tools</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-shell">
+  <nav class="guide-nav">
+    <a class="home" href="../index.html">← dmc-12.ai</a>
+    <div class="nav-group">Vendor guide</div>
+    <ul>
+      <li><a data-page="index.html" href="index.html">Getting started</a></li>
+      <li><a data-page="inventory.html" href="inventory.html">Inventory</a></li>
+      <li><a data-page="quote.html" href="quote.html">Quotes</a></li>
+      <li><a data-page="reservation.html" href="reservation.html">Reservations</a></li>
+      <li><a data-page="deal-handoff.html" href="deal-handoff.html">Deal hand-off ★</a></li>
+      <li><a data-page="errors.html" href="errors.html">Error taxonomy</a></li>
+      <li><a data-page="onboarding.html" href="onboarding.html">Partner onboarding</a></li>
+    </ul>
+  </nav>
+
+  <main class="guide-main">
+    <h1>Inventory</h1>
+    <p class="lede">
+      Four read tools, all under one scope: <span class="scope-pill read"><span class="pip"></span>inventory:read</span>.
+      Available to public and partner callers alike. Every tool returns public fields only — never invoice, cost,
+      hold-back, or salesperson data.
+    </p>
+
+    <div class="callout">
+      <span class="ttl">VIN format</span>
+      Wherever a VIN is accepted it must match <code>^[A-HJ-NPR-Z0-9]{17}$</code> — 17 alphanumeric characters,
+      ISO 3779 (the letters I, O, Q are excluded). VINs are upper-cased and trimmed server-side.
+    </div>
+
+    <!-- ============================ search ============================ -->
+    <h2>search_inventory</h2>
+    <p>
+      Semantic + structured search across available vehicles. Provide a natural-language <code>query</code> to rank
+      by relevance (a Voyage embedding round-trip), or omit it for a purely structured filter + sort with no
+      embedding cost. Only <em>available</em> (unsold, unreserved) vehicles are returned, up to 25.
+    </p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">query</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">≤ 500 chars. Blank → structured path.</td></tr>
+        <tr><td class="fname">min_year</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">1990–2030</td></tr>
+        <tr><td class="fname">max_year</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">1990–2030</td></tr>
+        <tr><td class="fname">min_price</td><td class="ftype">decimal</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">0–999999</td></tr>
+        <tr><td class="fname">max_price</td><td class="ftype">decimal</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">0–999999</td></tr>
+        <tr><td class="fname">max_mileage</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">0–500000</td></tr>
+        <tr><td class="fname">condition</td><td class="ftype">enum</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">new | used | cpo | any &nbsp;(default any)</td></tr>
+        <tr><td class="fname">sort_by</td><td class="ftype">enum</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">relevance | price | mileage | year &nbsp;(default relevance)</td></tr>
+        <tr><td class="fname">sort_order</td><td class="ftype">enum</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">asc | desc &nbsp;(default asc)</td></tr>
+        <tr><td class="fname">limit</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">1–25 &nbsp;(default 10)</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      <span class="ttl">Relevance → price fallback</span>
+      Relevance ordering needs an embedding. If you ask for <code>sort_by: "relevance"</code> with no
+      <code>query</code>, the service falls back to a deterministic <code>price</code> / <code>asc</code> sort so
+      results are stable and reproducible.
+    </div>
+    <h3>Request</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{
+  "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+  "params": {
+    "name": "search_inventory",
+    "arguments": {
+      "query": "2024 Subaru Outback AWD under 35k, white",
+      "max_price": 35000,
+      "limit": 5
+    }
+  }
+}</pre>
+    </div>
+    <h3>Response</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{ "data": {
+    "items": [
+      {
+        "vin": "4S4BTGUD8R3201234",
+        "year": 2024, "make": "Subaru", "model": "Outback", "trim": "Premium",
+        "condition": "new", "exterior_color": "Crystal White Pearl",
+        "mileage": 12, "asking_price": 34187.0, "msrp": 35420.0,
+        "status": "available", "photos": ["https://…"],
+        "similarity": 0.8123
+      }
+    ],
+    "count": 1
+  },
+  "_metadata": { "trace_id": "trc_…", "tool": "search_inventory", "protocol": "a2a" }
+}</pre>
+    </div>
+    <p><code>similarity</code> is present only on the relevance path (cosine distance, 4 dp). On the structured path it is absent.</p>
+
+    <!-- ============================ list ============================ -->
+    <h2>list_inventory</h2>
+    <p>
+      Structured-filter, paginated listing — exact-match lookups, year ranges, and price windows. Use this (not
+      <span class="mono">search_inventory</span>) when you want deterministic pagination over a filter set.
+      Returns <code>{ items, total, limit, offset }</code> where <code>total</code> is the full match count for the filter.
+    </p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">year</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">1990–2030 (exact match)</td></tr>
+        <tr><td class="fname">min_year</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">1990–2030</td></tr>
+        <tr><td class="fname">max_year</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">1990–2030</td></tr>
+        <tr><td class="fname">make</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">≤ 40 chars (case-insensitive)</td></tr>
+        <tr><td class="fname">model</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">≤ 60 chars (case-insensitive)</td></tr>
+        <tr><td class="fname">trim</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">≤ 80 chars (substring match)</td></tr>
+        <tr><td class="fname">condition</td><td class="ftype">enum</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">new | used | cpo | any (default any)</td></tr>
+        <tr><td class="fname">min_price</td><td class="ftype">decimal</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">0–999999</td></tr>
+        <tr><td class="fname">max_price</td><td class="ftype">decimal</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">0–999999</td></tr>
+        <tr><td class="fname">max_mileage</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">0–500000</td></tr>
+        <tr><td class="fname">limit</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">1–100 (default 25)</td></tr>
+        <tr><td class="fname">offset</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">0–10000 (default 0)</td></tr>
+      </tbody>
+    </table>
+    <h3>Request &amp; response</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>// arguments
+{ "make": "Subaru", "model": "Crosstrek", "min_year": 2023, "limit": 25, "offset": 0 }
+
+// data
+{ "items": [ { "vin": "…", "year": 2024, "make": "Subaru", "model": "Crosstrek", … } ],
+  "total": 41, "limit": 25, "offset": 0 }</pre>
+    </div>
+
+    <!-- ============================ vin lookup ============================ -->
+    <h2>get_vehicle_by_vin</h2>
+    <p>Fetch a single vehicle by VIN. Returns <code>{ vehicle, found }</code>; <code>vehicle</code> is <code>null</code> and <code>found</code> is <code>false</code> when the VIN is unknown.</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">vin</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td class="fconstraint">^[A-HJ-NPR-Z0-9]{17}$</td></tr>
+      </tbody>
+    </table>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>// arguments
+{ "vin": "4S4BTGUD8R3201234" }
+
+// data
+{ "found": true,
+  "vehicle": { "vin": "4S4BTGUD8R3201234", "year": 2024, "make": "Subaru",
+               "model": "Outback", "trim": "Premium", "mileage": 12,
+               "asking_price": 34187.0, "msrp": 35420.0, "status": "available",
+               "photos": ["https://…"] } }</pre>
+    </div>
+
+    <!-- ============================ availability ============================ -->
+    <h2>check_availability</h2>
+    <p>Batch status check for up to 50 VINs at once. Returns a <code>statuses</code> map; any VIN not in inventory maps to <code>unknown</code>.</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">vins</td><td class="ftype">string[]</td><td><span class="badge badge-req">required</span></td><td class="fconstraint">1–50 items, each ^[A-HJ-NPR-Z0-9]{17}$</td></tr>
+      </tbody>
+    </table>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>// arguments
+{ "vins": ["4S4BTGUD8R3201234", "JF2GTHMC5R8301111"] }
+
+// data
+{ "statuses": {
+    "4S4BTGUD8R3201234": "available",
+    "JF2GTHMC5R8301111": "reserved"
+} }</pre>
+    </div>
+    <p>Statuses: <code>available</code>, <code>reserved</code>, <code>sold</code>, <code>pending</code>, <code>in_transit</code>, <code>unknown</code>.</p>
+
+    <h2>Errors</h2>
+    <p>
+      <span class="mono">get_vehicle_by_vin</span> never errors on a miss — it returns <code>found: false</code>.
+      A malformed VIN (or out-of-range numeric filter) fails Pydantic validation and returns
+      <code>VALIDATION_FAILED</code>. See the <a href="errors.html">error taxonomy</a> for the full envelope.
+    </p>
+  </main>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<script src="../assets/dmc12.js"></script>
+</body>
+</html>

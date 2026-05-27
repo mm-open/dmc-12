@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Getting started — DMC-12 vendor integration guide</title>
+<meta name="description" content="How to integrate an AI agent with the DMC-12 protocol at Mark Miller Subaru: discovery, the A2A vs MCP rails, the search → quote → reserve → hand-off lifecycle, and auth in one paragraph." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/dmc12.css">
+</head>
+<body>
+
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
+      <a href="../index.html">Mark&nbsp;Miller&nbsp;Subaru</a>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12 guide</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>DMC-12 v0.4 · 10 tools</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-shell">
+  <nav class="guide-nav">
+    <a class="home" href="../index.html">← dmc-12.ai</a>
+    <div class="nav-group">Vendor guide</div>
+    <ul>
+      <li><a data-page="index.html" href="index.html">Getting started</a></li>
+      <li><a data-page="inventory.html" href="inventory.html">Inventory</a></li>
+      <li><a data-page="quote.html" href="quote.html">Quotes</a></li>
+      <li><a data-page="reservation.html" href="reservation.html">Reservations</a></li>
+      <li><a data-page="deal-handoff.html" href="deal-handoff.html">Deal hand-off ★</a></li>
+      <li><a data-page="errors.html" href="errors.html">Error taxonomy</a></li>
+      <li><a data-page="onboarding.html" href="onboarding.html">Partner onboarding</a></li>
+    </ul>
+  </nav>
+
+  <main class="guide-main">
+    <h1>Integrate an agent with DMC-12</h1>
+    <p class="lede">
+      This is the how-to companion to the <a href="../index.html">dmc-12.ai</a> overview and the
+      machine-readable spec at <a href="https://dmc12.ai/specification/SPEC.md" target="_blank" rel="noopener">dmc12.ai</a>.
+      It walks a partner agent — CarEdge, Cox / Dealer.com, a broker, or an OEM agent — from discovery to a
+      completed deal hand-off against the live Mark Miller Subaru endpoint.
+    </p>
+
+    <div class="callout">
+      <span class="ttl">What's live right now</span>
+      DMC-12 <strong>v0.4.0</strong> · <strong>10 tools</strong> on MM's deployment (negotiation is defined in the
+      spec but off here — every quote is at asking price). Five scopes:
+      <code>inventory:read</code>, <code>quote:write</code>, <code>reservation:write</code>,
+      <code>deal:handoff</code>, <code>pricing:read</code>.
+    </div>
+
+    <h2>1. The lifecycle</h2>
+    <p>Every transaction-class flow is the same four steps. Reads (inventory, pricing disclosure) can happen at any point.</p>
+    <div class="pipeline">
+      <div class="step">
+        <div class="n">01 · read</div>
+        <div class="t">search</div>
+        <div class="d">Find a VIN with <span class="mono">search_inventory</span> / <span class="mono">list_inventory</span>, or look one up directly.</div>
+      </div>
+      <div class="step">
+        <div class="n">02 · quote:write</div>
+        <div class="t">request_quote</div>
+        <div class="d">Pin a 30-minute price at the listed asking price. Returns a <span class="mono">quote_id</span>.</div>
+      </div>
+      <div class="step">
+        <div class="n">03 · reservation:write</div>
+        <div class="t">create_reservation</div>
+        <div class="d">Convert the open quote into a 30-minute soft hold on the VIN. Non-binding.</div>
+      </div>
+      <div class="step">
+        <div class="n">04 · deal:handoff</div>
+        <div class="t">initiate_deal_handoff</div>
+        <div class="d">Hand the held VIN + consented customer contact to a live sales manager.</div>
+      </div>
+    </div>
+    <p style="margin-top:18px;">
+      Quotes and reservations both carry a 30-minute TTL, so an agent should run the
+      quote → reserve → hand-off tail back-to-back once the buyer has committed. The deep-dive pages cover each
+      step: <a href="inventory.html">Inventory</a> → <a href="quote.html">Quotes</a> →
+      <a href="reservation.html">Reservations</a> → <a href="deal-handoff.html">Deal hand-off</a>.
+    </p>
+
+    <h2>2. Pick a rail: A2A or MCP</h2>
+    <p>The same DMC-12 capabilities are served over two wires from one Cloud Run service. Choose by who your caller is.</p>
+    <table class="field-table">
+      <thead><tr><th>Rail</th><th>Transport</th><th>Who</th><th>Surface</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="fname">/a2a/</td>
+          <td class="ftype">JSON-RPC 2.0</td>
+          <td>Named partner agents (machine-to-machine)</td>
+          <td>Full write surface — read + quote + reservation + deal hand-off, scope-gated.</td>
+        </tr>
+        <tr>
+          <td class="fname">/mcp/</td>
+          <td class="ftype">Streamable HTTP</td>
+          <td>LLM clients (Claude, ChatGPT, Gemini) and your own MCP agent</td>
+          <td>Public callers are read-only; partner-audience tokens get the write surface.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>This guide uses the A2A rail</strong> for every worked example — it is the path partners integrate
+      against. The wire envelope is a standard JSON-RPC <span class="mono">tools/call</span>:
+    </p>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>POST /a2a/   Authorization: Bearer &lt;token&gt;
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "search_inventory",
+    "arguments": { "query": "2024 Outback AWD under 35k", "limit": 5 }
+  }
+}</pre>
+    </div>
+    <p>And <span class="mono">tools/list</span> (no params) returns the live, scope-filtered tool catalog. Every response is wrapped in a standard envelope:</p>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "data": { /* the tool payload */ },
+    "_metadata": {
+      "trace_id": "trc_…",   // log this — it correlates to the audit row
+      "tool": "search_inventory",
+      "agent_id": "…@clients",
+      "protocol": "a2a",
+      "timestamp": "2026-05-27T18:04:11+00:00"
+    }
+  }
+}</pre>
+    </div>
+    <div class="callout">
+      <span class="ttl">Data, not instructions</span>
+      Every payload is nested under <code>data</code> with a <code>_metadata</code> sidecar so a downstream LLM
+      treats it as content, never as instructions. Always log <code>_metadata.trace_id</code> — it is the only
+      way MM can correlate a complaint with the 90-day audit log.
+    </div>
+
+    <h2>3. Discovery — check the well-knowns</h2>
+    <p>
+      Every claim about this deployment is backed by an unauthenticated, cacheable document at a canonical URL.
+      Fetch these first; they are the source of truth for tool count, capability versions, scopes, and the auth server.
+    </p>
+    <div class="verify-row">
+      <div class="what">Agent Card <span class="hint">A2A v1.0 — signed JWS; tools, scopes, policies</span></div>
+      <a class="url" data-mcp-path="/.well-known/agent-card.json" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/agent-card.json</a>
+    </div>
+    <div class="verify-row">
+      <div class="what">MCP server card <span class="hint">SEP-1960 — endpoints, transports, auth, scope split</span></div>
+      <a class="url" data-mcp-path="/.well-known/mcp" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/mcp</a>
+    </div>
+    <div class="verify-row">
+      <div class="what">UCP manifest <span class="hint">UCP v1 — merchant, <span class="mono">ai.dmc12.automotive</span> v0.4, freshness</span></div>
+      <a class="url" data-mcp-path="/.well-known/ucp" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/ucp</a>
+    </div>
+    <div class="verify-row">
+      <div class="what">Protected-resource metadata <span class="hint">RFC 9728 — <span class="mono">scopes_supported</span>, authorization server</span></div>
+      <a class="url" data-mcp-path="/.well-known/oauth-protected-resource" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/oauth-protected-resource</a>
+    </div>
+    <div class="verify-row">
+      <div class="what">Agent Card JWKS <span class="hint">Public key to verify the Agent Card signature</span></div>
+      <a class="url" data-mcp-path="/.well-known/jwks.json" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/jwks.json</a>
+    </div>
+
+    <h2>4. Auth, in one paragraph</h2>
+    <p>
+      Partners authenticate with OAuth 2.1 <strong>client-credentials</strong> against Auth0 tenant
+      <code>mmbrain-prod.us.auth0.com</code>, audience <code>mm-inventory-mcp</code>. Mint an RS256 access token
+      (1-hour TTL), cache it for ~55 minutes, and send it as a <code>Bearer</code> token on every
+      <span class="mono">/a2a/</span> call. Your effective permissions are the <strong>intersection</strong> of the
+      scopes seeded on your agent row and the scopes in your token. Onboarding is an email to Ben — see
+      <a href="onboarding.html">Partner onboarding</a> for the full credential bundle, the mint command, rate
+      limits, and the scope matrix.
+    </p>
+
+    <div class="callout warn">
+      <span class="ttl">Negotiation is off at MM</span>
+      The DMC-12 spec defines four negotiation tools (<span class="mono">submit_offer</span>,
+      <span class="mono">submit_counter_offer</span>, <span class="mono">accept_offer</span>,
+      <span class="mono">reject_offer</span>, scope <span class="mono">quote:negotiate</span>) that bring the
+      canonical surface to 14. <strong>They are not registered on this deployment</strong> and the
+      <span class="mono">quote:negotiate</span> scope is not issued. Every quote is at the listed asking price.
+      Other dealers forking the open spec can enable them.
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<script src="../assets/dmc12.js"></script>
+</body>
+</html>

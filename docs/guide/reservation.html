@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Reservations — DMC-12 vendor integration guide</title>
+<meta name="description" content="DMC-12 reservation tools: create_reservation, release_reservation, get_reservation_status — 30-minute soft holds, one active hold per VIN, daily budget and same-day-release refund." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/dmc12.css">
+</head>
+<body>
+
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
+      <a href="../index.html">Mark&nbsp;Miller&nbsp;Subaru</a>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12 guide</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>DMC-12 v0.4 · 10 tools</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-shell">
+  <nav class="guide-nav">
+    <a class="home" href="../index.html">← dmc-12.ai</a>
+    <div class="nav-group">Vendor guide</div>
+    <ul>
+      <li><a data-page="index.html" href="index.html">Getting started</a></li>
+      <li><a data-page="inventory.html" href="inventory.html">Inventory</a></li>
+      <li><a data-page="quote.html" href="quote.html">Quotes</a></li>
+      <li><a data-page="reservation.html" href="reservation.html">Reservations</a></li>
+      <li><a data-page="deal-handoff.html" href="deal-handoff.html">Deal hand-off ★</a></li>
+      <li><a data-page="errors.html" href="errors.html">Error taxonomy</a></li>
+      <li><a data-page="onboarding.html" href="onboarding.html">Partner onboarding</a></li>
+    </ul>
+  </nav>
+
+  <main class="guide-main">
+    <h1>Reservations</h1>
+    <p class="lede">
+      Three tools, one scope: <span class="scope-pill write"><span class="pip"></span>reservation:write</span>.
+      A reservation is a <strong>30-minute soft hold</strong> on a VIN, created from an open quote. It is
+      <strong>not</strong> a binding purchase — a human closes the deal after
+      <a href="deal-handoff.html">hand-off</a>.
+    </p>
+
+    <div class="callout">
+      <span class="ttl">Rules of the hold</span>
+      <ul class="prose" style="margin:8px 0 0;">
+        <li><strong>One active hold per VIN.</strong> A second create on a VIN that already has an unexpired active hold fails with <code>RESERVATION_CONFLICT</code>.</li>
+        <li><strong>30-minute TTL.</strong> <code>expires_at</code> is set at insert (now + 30 min). There is no background sweeper — stale active holds are lazy-expired the next time anyone reserves that VIN.</li>
+        <li><strong>Per-agent daily budget.</strong> Default 5 reservations/day (raise on request). Creating charges the budget; the create is the only tool that consumes it.</li>
+        <li><strong>Same-day-release refund.</strong> Releasing within the same UTC day you created the hold refunds 1 slot to your daily budget.</li>
+      </ul>
+    </div>
+
+    <!-- ============================ create ============================ -->
+    <h2>create_reservation</h2>
+    <p>Convert an <code>open</code> quote into a soft hold. Validates that the quote exists, is open and unexpired, is owned by you, and that the vehicle is still available. On success the quote flips to <code>converted</code>.</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">quote_id</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td class="fconstraint">10–64 chars — from request_quote</td></tr>
+        <tr><td class="fname">customer_ref</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">≤ 200 chars — opaque; your own handle, not PII</td></tr>
+      </tbody>
+    </table>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>// arguments
+{ "quote_id": "qte_8f1c…", "customer_ref": "caredge-sess-91f3" }
+
+// data
+{ "reservation_token": "rsv_Qh7m…",
+  "vin": "4S4BTGUD8R3201234",
+  "reserved_price": 34187.0,
+  "created_at": "2026-05-27T18:05:02+00:00",
+  "expires_at": "2026-05-27T18:35:02+00:00",
+  "status": "active",
+  "terms": "30-minute soft hold. Not a binding purchase. A human closes the deal. …" }</pre>
+    </div>
+    <p>Errors: <code>QUOTE_NOT_FOUND</code>, <code>QUOTE_EXPIRED</code>, <code>QUOTE_STATE</code> (already converted/closed), <code>VEHICLE_UNAVAILABLE</code>, <code>RESERVATION_CONFLICT</code> (VIN already held), <code>RESERVATION_LIMIT</code> (daily budget hit), <code>NOT_AUTHORIZED</code> (quote owned by another agent).</p>
+
+    <!-- ============================ release ============================ -->
+    <h2>release_reservation</h2>
+    <p>
+      Release a hold you own. <strong>Idempotent</strong> — calling it on an already-released or expired
+      reservation returns <code>status</code> with <code>already_closed: true</code> instead of an error, so it is
+      always safe to call twice. Releasing within the same UTC day refunds 1 slot to your daily budget.
+    </p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">reservation_token</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td class="fconstraint">10–80 chars</td></tr>
+      </tbody>
+    </table>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>// arguments
+{ "reservation_token": "rsv_Qh7m…" }
+
+// data (first release)
+{ "status": "released", "released_at": "2026-05-27T18:12:40+00:00", "vin": "4S4BTGUD8R3201234" }
+
+// data (second, idempotent release)
+{ "status": "released", "already_closed": true }</pre>
+    </div>
+
+    <!-- ============================ status ============================ -->
+    <h2>get_reservation_status</h2>
+    <p>Look up the current state of a reservation you created. Same input shape as release.</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">reservation_token</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td class="fconstraint">10–80 chars</td></tr>
+      </tbody>
+    </table>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>// data
+{ "reservation_token": "rsv_Qh7m…",
+  "vin": "4S4BTGUD8R3201234",
+  "reserved_price": 34187.0,
+  "created_at": "2026-05-27T18:05:02+00:00",
+  "expires_at": "2026-05-27T18:35:02+00:00",
+  "released_at": null,
+  "released_by": null,
+  "status": "active" }</pre>
+    </div>
+    <p>Status values: <code>active</code>, <code>released</code>, <code>expired</code>, <code>converted</code>. <code>released_by</code> is <code>agent</code> for an agent-initiated release. Errors: <code>RESERVATION_NOT_FOUND</code>, <code>NOT_AUTHORIZED</code> (owned by another agent).</p>
+
+    <h2>Next step</h2>
+    <p>While a reservation is <code>active</code> you have a 30-minute window to either release it or run <a href="deal-handoff.html">initiate_deal_handoff</a> to bring a human into the loop. Let the window lapse and the hold expires automatically.</p>
+  </main>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<script src="../assets/dmc12.js"></script>
+</body>
+</html>

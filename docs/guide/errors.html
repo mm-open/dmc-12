@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Error taxonomy — DMC-12 vendor integration guide</title>
+<meta name="description" content="The DMC-12 error envelope (error_code + retryable + error_id over the legacy error string) and the full 21-code table with client branching guidance." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/dmc12.css">
+</head>
+<body>
+
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
+      <a href="../index.html">Mark&nbsp;Miller&nbsp;Subaru</a>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12 guide</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>DMC-12 v0.4 · 10 tools</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-shell">
+  <nav class="guide-nav">
+    <a class="home" href="../index.html">← dmc-12.ai</a>
+    <div class="nav-group">Vendor guide</div>
+    <ul>
+      <li><a data-page="index.html" href="index.html">Getting started</a></li>
+      <li><a data-page="inventory.html" href="inventory.html">Inventory</a></li>
+      <li><a data-page="quote.html" href="quote.html">Quotes</a></li>
+      <li><a data-page="reservation.html" href="reservation.html">Reservations</a></li>
+      <li><a data-page="deal-handoff.html" href="deal-handoff.html">Deal hand-off ★</a></li>
+      <li><a data-page="errors.html" href="errors.html">Error taxonomy</a></li>
+      <li><a data-page="onboarding.html" href="onboarding.html">Partner onboarding</a></li>
+    </ul>
+  </nav>
+
+  <main class="guide-main">
+    <h1>Error taxonomy</h1>
+    <p class="lede">
+      As of DMC-12 v0.3 every error payload carries a stable <code>error_code</code>, a <code>retryable</code>
+      flag, and a correlation <code>error_id</code> — layered <em>over</em> the legacy <code>error</code> string,
+      which is preserved byte-identically. Switch on <code>error_code</code>, not the human-readable
+      <code>message</code>.
+    </p>
+
+    <h2>The envelope</h2>
+    <p>Errors come back inside the normal envelope (HTTP 200 on the A2A rail, except auth failures which are JSON-RPC <code>-32001</code> / HTTP 401). The error fields live under <code>data</code>:</p>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{ "data": {
+    "error": "reservation_expired",         // legacy string — preserved
+    "message": "…",                          // human-readable; do NOT parse
+    "error_code": "RESERVATION_EXPIRED",     // stable UPPER_SNAKE — branch on this
+    "retryable": false,                      // true only for transient classes
+    "error_id": "err_3f9a2c…"                // quote this in incident email
+  },
+  "_metadata": { "trace_id": "trc_…", "tool": "initiate_deal_handoff", "protocol": "a2a" }
+}</pre>
+    </div>
+    <div class="callout">
+      <span class="ttl">error_id ↔ audit row</span>
+      <code>error_id</code> correlates 1:1 to an <code>audit_log</code> row; <code>_metadata.trace_id</code>
+      correlates the whole call. Include both in any incident email to <code>mm_reports@mmsubaru.com</code>.
+    </div>
+
+    <h2>Recommended client branching</h2>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>const d = resp.result.data;
+if (d.error_code) {
+  switch (d.error_code) {
+    case "RATE_LIMITED":
+    case "UPSTREAM_UNAVAILABLE":
+    case "INTERNAL_ERROR":
+      return backoffAndRetry(d);          // retryable === true
+    case "QUOTE_EXPIRED":
+    case "RESERVATION_EXPIRED":
+      return restartFromQuote();          // re-quote, re-reserve
+    case "RESERVATION_CONFLICT":
+      return pickAnotherVin();            // VIN already held
+    case "VALIDATION_FAILED":
+      return fixRequestShape(d);          // your payload; do not retry as-is
+    case "NOT_AUTHORIZED":
+      return checkScopesAndOwnership(d);  // scope intersection / token owner
+    case "CONSENT_INVALID":
+      return refreshConsent();            // hand-off: expires_at lapsed
+    default:
+      return surfaceToOperator(d);
+  }
+}</pre>
+    </div>
+
+    <h2>The full code set (21)</h2>
+    <p>Source of truth: <code>schemas/error.json</code> at <a href="https://github.com/mm-open/dmc-12" target="_blank" rel="noopener">mm-open/dmc-12</a>. <code>retryable</code> is <code>true</code> only for the three transient classes.</p>
+    <table class="field-table">
+      <thead><tr><th>error_code</th><th>Retryable</th><th>Meaning / when</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">VEHICLE_NOT_FOUND</td><td class="fconstraint">no</td><td>VIN not in inventory.</td></tr>
+        <tr><td class="fname">VEHICLE_UNAVAILABLE</td><td class="fconstraint">no</td><td>Vehicle status isn't <code>available</code> (sold / pending / reserved).</td></tr>
+        <tr><td class="fname">QUOTE_NOT_FOUND</td><td class="fconstraint">no</td><td>Unknown <code>quote_id</code>.</td></tr>
+        <tr><td class="fname">QUOTE_EXPIRED</td><td class="fconstraint">no</td><td>Quote past its 30-minute TTL. Re-quote.</td></tr>
+        <tr><td class="fname">QUOTE_STATE</td><td class="fconstraint">no</td><td>Quote already converted or closed.</td></tr>
+        <tr><td class="fname">RESERVATION_NOT_FOUND</td><td class="fconstraint">no</td><td>Unknown <code>reservation_token</code>.</td></tr>
+        <tr><td class="fname">RESERVATION_EXPIRED</td><td class="fconstraint">no</td><td>Hold past its 30-minute TTL at lock time.</td></tr>
+        <tr><td class="fname">RESERVATION_STATE</td><td class="fconstraint">no</td><td>Reservation not <code>active</code> (released / expired / converted).</td></tr>
+        <tr><td class="fname">RESERVATION_CONFLICT</td><td class="fconstraint">no</td><td>VIN already has an active hold. Pick another VIN.</td></tr>
+        <tr><td class="fname">RESERVATION_LIMIT</td><td class="fconstraint">no</td><td>Daily reservation budget exhausted. Request a higher tier.</td></tr>
+        <tr><td class="fname">OFFER_NOT_FOUND</td><td class="fconstraint">no</td><td>Negotiation — <em>off at MM</em>. Unknown offer.</td></tr>
+        <tr><td class="fname">OFFER_EXPIRED</td><td class="fconstraint">no</td><td>Negotiation — <em>off at MM</em>. Offer/thread lapsed.</td></tr>
+        <tr><td class="fname">OFFER_STATE</td><td class="fconstraint">no</td><td>Negotiation — <em>off at MM</em>. Offer not in an actionable state.</td></tr>
+        <tr><td class="fname">CONSENT_REQUIRED</td><td class="fconstraint">no</td><td>Taxonomy member; the schema-level <code>customer_consent</code> gate surfaces as <code>VALIDATION_FAILED</code> today.</td></tr>
+        <tr><td class="fname">CONSENT_INVALID</td><td class="fconstraint">no</td><td>Hand-off: supplied <code>consent.expires_at</code> is in the past. Refresh consent.</td></tr>
+        <tr><td class="fname">NOT_AUTHORIZED</td><td class="fconstraint">no</td><td>Missing scope, or the resource is owned by another agent.</td></tr>
+        <tr><td class="fname">VALIDATION_FAILED</td><td class="fconstraint">no</td><td>Input failed schema validation (VIN shape, E.164 phone, email, lengths, missing consent). Fix the payload.</td></tr>
+        <tr><td class="fname">RATE_LIMITED</td><td class="fconstraint"><strong>yes</strong></td><td>RPM or daily budget exceeded. Back off and retry.</td></tr>
+        <tr><td class="fname">NOT_CONFIGURED</td><td class="fconstraint">no</td><td>A required server-side config (e.g. hand-off destination, fee schedule) is unset.</td></tr>
+        <tr><td class="fname">UPSTREAM_UNAVAILABLE</td><td class="fconstraint"><strong>yes</strong></td><td>A dependency failed (e.g. SMTP send). Retry with backoff.</td></tr>
+        <tr><td class="fname">INTERNAL_ERROR</td><td class="fconstraint"><strong>yes</strong></td><td>Unexpected server fault. Retry; if it persists, email with <code>error_id</code> + <code>trace_id</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <span class="ttl">Auth failures are different</span>
+      A bad/expired/wrong-audience bearer token returns JSON-RPC error <code>-32001</code> with HTTP 401 — not the
+      <code>data.error</code> envelope. An empty scope intersection, by contrast, runs the dispatcher and returns
+      <code>NOT_AUTHORIZED</code> inside the envelope. See <a href="onboarding.html">Partner onboarding</a> §auth.
+    </div>
+
+    <h2>PII-safe by design</h2>
+    <p>
+      Validation-error messages you receive echo your own input so you can debug, but the server's audit summary
+      records only the field location + error type — never the offending value. Customer contact, notes, and
+      consent text are hashed before they touch any persistent store. See
+      <a href="deal-handoff.html">Deal hand-off</a> for the PII model.
+    </p>
+  </main>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<script src="../assets/dmc12.js"></script>
+</body>
+</html>
