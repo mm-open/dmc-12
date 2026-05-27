@@ -55,10 +55,17 @@ capabilities publish `payment.handlers: []` until AP2 lands.
 
 ## Status
 
-**v0.3 (Current Release, 2026-05-26).** Reference implementation in
+**v0.4 (Current Release, 2026-05-26).** Reference implementation in
 production at Mark Miller Subaru Midtown (Salt Lake City, UT).
 
-Added in v0.3 (current release) — both additive and non-breaking:
+Added in v0.4 (current release) — all additive and non-breaking:
+
+- `ai.dmc12.automotive.inventory` → **capability 0.2.0** — `search_inventory` gains an optional `query` (structured-only search when omitted), agent-controlled `sort_by` / `sort_order`, and a `min_price` floor; `list_inventory` gains a `min_year` / `max_year` range. Vehicle record unchanged.
+- `ai.dmc12.automotive.quote` → **capability 0.3.0** — the quote output gains an optional, non-binding `out_the_door` estimate (+ `out_the_door_estimate: true`), emitted only when the merchant has pricing disclosure enabled with a live fee schedule
+
+See [`SPEC.md`](./SPEC.md) §14.
+
+Added in v0.3 — both additive and non-breaking:
 
 - `ai.dmc12.automotive.errors` — a cross-cutting error taxonomy: every tool error carries an `error_code`, a `retryable` flag, and a correlation `error_id`, layered additively over the legacy `error` string
 - `ai.dmc12.automotive.deal_handoff` → v0.1.2 — optional channel-scoped `consent` object (authorized channels + enforced expiry + verbatim text); the bare `customer_consent` boolean is unchanged
