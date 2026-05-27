@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Quotes — DMC-12 vendor integration guide</title>
+<meta name="description" content="request_quote in DMC-12: a 30-minute quote at the listed asking price (no negotiation), plus the optional non-binding out-the-door estimate, live now that pricing disclosure is enabled." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/dmc12.css">
+</head>
+<body>
+
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
+      <a href="../index.html">Mark&nbsp;Miller&nbsp;Subaru</a>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12 guide</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>DMC-12 v0.4 · 10 tools</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-shell">
+  <nav class="guide-nav">
+    <a class="home" href="../index.html">← dmc-12.ai</a>
+    <div class="nav-group">Vendor guide</div>
+    <ul>
+      <li><a data-page="index.html" href="index.html">Getting started</a></li>
+      <li><a data-page="inventory.html" href="inventory.html">Inventory</a></li>
+      <li><a data-page="quote.html" href="quote.html">Quotes</a></li>
+      <li><a data-page="reservation.html" href="reservation.html">Reservations</a></li>
+      <li><a data-page="deal-handoff.html" href="deal-handoff.html">Deal hand-off ★</a></li>
+      <li><a data-page="errors.html" href="errors.html">Error taxonomy</a></li>
+      <li><a data-page="onboarding.html" href="onboarding.html">Partner onboarding</a></li>
+    </ul>
+  </nav>
+
+  <main class="guide-main">
+    <h1>Quotes</h1>
+    <p class="lede">
+      One tool: <span class="mono">request_quote</span>, scope
+      <span class="scope-pill write"><span class="pip"></span>quote:write</span>. It issues a 30-minute price quote
+      for a VIN at the listed asking price and returns a <code>quote_id</code> you feed into
+      <a href="reservation.html">create_reservation</a>.
+    </p>
+
+    <div class="callout warn">
+      <span class="ttl">Asking price only — there is no proposed-price parameter</span>
+      <code>quoted_price</code> is always exactly the vehicle's <code>asking_price</code>. No input field accepts a
+      counter or proposed price; this is enforced server-side and is the headline policy of MM's deployment
+      (negotiation is off). If you need a discount conversation, that happens with the human after
+      <a href="deal-handoff.html">hand-off</a>.
+    </div>
+
+    <h2>request_quote</h2>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraints</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">vin</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td class="fconstraint">^[A-HJ-NPR-Z0-9]{17}$</td></tr>
+        <tr><td class="fname">buyer_ref</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td class="fconstraint">≤ 200 chars — opaque; your own correlation handle, not PII</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Request</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{
+  "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+  "params": {
+    "name": "request_quote",
+    "arguments": { "vin": "4S4BTGUD8R3201234", "buyer_ref": "caredge-sess-91f3" }
+  }
+}</pre>
+    </div>
+
+    <h3>Response</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{ "data": {
+    "quote_id": "qte_8f1c…",
+    "vin": "4S4BTGUD8R3201234",
+    "quoted_price": 34187.0,
+    "currency": "USD",
+    "created_at": "2026-05-27T18:04:11+00:00",
+    "expires_at": "2026-05-27T18:34:11+00:00",
+    "terms": "Quote valid for 30 minutes at the listed asking price. No negotiation. …",
+
+    "out_the_door": {
+      "price_lines": [
+        { "label": "Vehicle price", "kind": "vehicle_price", "payee": "dealer",
+          "amount": { "amount": 34187.0, "currency": "USD" }, "negotiable": false },
+        { "label": "Documentation fee", "kind": "fee", "payee": "dealer",
+          "amount": { "amount": 445.0, "currency": "USD" }, "negotiable": false }
+      ],
+      "subtotal":    { "amount": 34632.0, "currency": "USD" },
+      "taxes_total": { "amount": 0.0,     "currency": "USD" },
+      "fees_total":  { "amount": 445.0,   "currency": "USD" },
+      "out_the_door":{ "amount": 34632.0, "currency": "USD" },
+      "as_of": "2026-05-27T18:04:11+00:00",
+      "jurisdiction": "US-UT",
+      "estimate": true,
+      "disclosure_form_url": "https://dmv.utah.gov/…/mved-tx-disclosure-form.pdf"
+    },
+    "out_the_door_estimate": true
+} }</pre>
+    </div>
+
+    <h2>The out-the-door estimate</h2>
+    <p>
+      Pricing disclosure is <strong>live on MM's deployment</strong> (the <code>pricing:read</code> scope is
+      advertised). When the dealer has a published fee schedule for the store + jurisdiction, the quote response
+      carries an additional <code>out_the_door</code> object and an <code>out_the_door_estimate: true</code> flag.
+      It is the same structure the standalone <span class="mono">get_pricing_disclosure</span> tool returns.
+    </p>
+    <ul class="prose">
+      <li><strong>Non-binding.</strong> <code>estimate</code> is always <code>true</code>. The firm headline number remains <code>quoted_price</code>; the OTD is an itemized projection.</li>
+      <li><strong>Best-effort.</strong> If the fee schedule is missing or malformed, the quote still succeeds — the <code>out_the_door</code> block is simply omitted. Never assume it is present; branch on its existence.</li>
+      <li><strong>Itemized.</strong> <code>price_lines</code> tag each line with a <code>kind</code> (<code>vehicle_price</code> | <code>fee</code> | <code>tax</code> | <code>addon</code>) and a <code>payee</code> (<code>dealer</code> | <code>government</code>). <code>taxes_total</code> sums the <code>tax</code> lines; <code>fees_total</code> sums dealer non-vehicle lines.</li>
+      <li><strong>Jurisdiction</strong> is <code>US-UT</code>. The MM doc fee is <code>$445</code>; sales tax, title, and registration currently itemize at <code>$0.00</code> on this deployment.</li>
+    </ul>
+    <div class="callout">
+      <span class="ttl">Want OTD without a quote?</span>
+      Call <span class="mono">get_pricing_disclosure(vin)</span> (scope <code>pricing:read</code>, public-rail
+      callable, no PII, no DB write) at the search / triage step. It returns the same <code>out_the_door</code>
+      object standalone — useful before the buyer commits to a quote.
+    </div>
+
+    <h2>Lifecycle</h2>
+    <p>
+      A quote is <code>open</code> for 30 minutes. Convert it to a hold with
+      <a href="reservation.html">create_reservation</a> (which flips the quote to <code>converted</code>); let it
+      lapse and it moves to <code>expired</code>. A quote can only be converted by the agent that created it.
+      Common errors: <code>VEHICLE_NOT_FOUND</code>, <code>VEHICLE_UNAVAILABLE</code> (status isn't
+      <code>available</code>) — see the <a href="errors.html">error taxonomy</a>.
+    </p>
+  </main>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<script src="../assets/dmc12.js"></script>
+</body>
+</html>

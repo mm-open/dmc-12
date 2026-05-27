@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Partner onboarding — DMC-12 vendor integration guide</title>
+<meta name="description" content="How to onboard as a DMC-12 partner at Mark Miller Subaru: the email-Ben flow, Auth0 client-credentials, minting a token, the scope model (DB row ∩ JWT grant), rate limits, and the audit trail." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/dmc12.css">
+</head>
+<body>
+
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
+      <a href="../index.html">Mark&nbsp;Miller&nbsp;Subaru</a>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12 guide</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>DMC-12 v0.4 · 10 tools</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-shell">
+  <nav class="guide-nav">
+    <a class="home" href="../index.html">← dmc-12.ai</a>
+    <div class="nav-group">Vendor guide</div>
+    <ul>
+      <li><a data-page="index.html" href="index.html">Getting started</a></li>
+      <li><a data-page="inventory.html" href="inventory.html">Inventory</a></li>
+      <li><a data-page="quote.html" href="quote.html">Quotes</a></li>
+      <li><a data-page="reservation.html" href="reservation.html">Reservations</a></li>
+      <li><a data-page="deal-handoff.html" href="deal-handoff.html">Deal hand-off ★</a></li>
+      <li><a data-page="errors.html" href="errors.html">Error taxonomy</a></li>
+      <li><a data-page="onboarding.html" href="onboarding.html">Partner onboarding</a></li>
+    </ul>
+  </nav>
+
+  <main class="guide-main">
+    <h1>Partner onboarding</h1>
+    <p class="lede">
+      Partner access is granted, not self-served. You email us, we provision an Auth0 machine-to-machine client
+      and seed your agent row, and you're live the same day. Here's the whole flow and the credential bundle you'll receive.
+    </p>
+
+    <h2>1. Email Ben</h2>
+    <p>
+      Onboarding starts with an email to
+      <a href="mailto:benr@mmsubaru.com?subject=DMC-12%20partner%20onboarding">benr@mmsubaru.com</a>
+      (or <code>mm_reports@mmsubaru.com</code>, subject <code>[mm-inv-mcp onboarding] &lt;your org&gt;</code>).
+      Include your legal entity, a named technical contact, your use case, and the scopes you need. Triage takes
+      about 10 minutes; total turnaround from triage to live is typically under an hour.
+    </p>
+
+    <h2>2. The credential bundle</h2>
+    <p>We deliver these values over a secure channel (1Password time-bounded share or Bitwarden Send — never plain email or Slack).</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">Auth0 tenant</td><td class="ftype">mmbrain-prod.us.auth0.com</td></tr>
+        <tr><td class="fname">Token endpoint</td><td class="ftype">https://mmbrain-prod.us.auth0.com/oauth/token</td></tr>
+        <tr><td class="fname">Grant type</td><td class="ftype">client_credentials</td></tr>
+        <tr><td class="fname">Audience</td><td class="ftype">mm-inventory-mcp</td></tr>
+        <tr><td class="fname">Signing alg</td><td class="ftype">RS256</td></tr>
+        <tr><td class="fname">Token TTL</td><td class="ftype">3600 s (1 hour)</td></tr>
+        <tr><td class="fname">client_id / client_secret</td><td class="ftype">unique per partner — delivered securely</td></tr>
+        <tr><td class="fname">Your <code>sub</code> at the service</td><td class="ftype">&lt;client_id&gt;@clients</td></tr>
+        <tr><td class="fname">A2A endpoint</td><td class="ftype"><a data-mcp-path="/a2a/" data-mcp-role="href" target="_blank" rel="noopener">/a2a/</a></td></tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      <span class="ttl">Two JWKS — don't confuse them</span>
+      <strong>Auth0 JWKS</strong> (<code>mmbrain-prod.us.auth0.com/.well-known/jwks.json</code>) verifies the
+      <em>access tokens</em> Auth0 issues. The <strong>service JWKS</strong>
+      (<a data-mcp-path="/.well-known/jwks.json" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/jwks.json</a>)
+      verifies the <em>Agent Card signature</em>. You consume both, for different things.
+    </div>
+
+    <h2>3. Mint a token</h2>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>A2A_BEARER=$(curl -s -X POST https://mmbrain-prod.us.auth0.com/oauth/token \
+  -H 'content-type: application/json' \
+  -d '{
+    "client_id":     "&lt;your client_id&gt;",
+    "client_secret": "&lt;your client_secret&gt;",
+    "audience":      "mm-inventory-mcp",
+    "grant_type":    "client_credentials"
+  }' | jq -r .access_token)</pre>
+    </div>
+    <p><strong>Cache the token ~55 minutes</strong> and re-mint before expiry. Minting on every request will get you rate-limited at Auth0.</p>
+
+    <h2>4. Call a tool</h2>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>curl -X POST <span data-mcp-path="/a2a/" data-mcp-role="text">…/a2a/</span> \
+  -H "Authorization: Bearer $A2A_BEARER" \
+  -H 'content-type: application/json' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+    "params": { "name": "search_inventory",
+                "arguments": { "query": "2024 Outback AWD under 35k", "limit": 5 } }
+  }'</pre>
+    </div>
+    <p>The dry-run that completes onboarding is exactly this call: you mint a token and hit <span class="mono">search_inventory</span>; we confirm your <code>trace_id</code> in the audit log and flip your agent row to <code>active = true</code>.</p>
+
+    <h2>5. The scopes we issue you</h2>
+    <p>
+      The default partner bundle is five scopes. We grant the minimum that covers your use case; tell us during
+      triage if you need less.
+    </p>
+    <table class="field-table">
+      <thead><tr><th>Scope</th><th>Unlocks</th><th>PII?</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">inventory:read</td><td>search_inventory, get_vehicle_by_vin, list_inventory, check_availability</td><td class="fconstraint">no</td></tr>
+        <tr><td class="fname">quote:write</td><td>request_quote</td><td class="fconstraint">no (opaque buyer_ref)</td></tr>
+        <tr><td class="fname">reservation:write</td><td>create_reservation, release_reservation, get_reservation_status</td><td class="fconstraint">no (opaque customer_ref)</td></tr>
+        <tr><td class="fname">deal:handoff</td><td>initiate_deal_handoff</td><td class="fconstraint"><strong>yes</strong> — name, phone, email</td></tr>
+        <tr><td class="fname">pricing:read</td><td>get_pricing_disclosure (+ OTD on quotes)</td><td class="fconstraint">no</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      <span class="ttl">Effective scope = DB row ∩ JWT grant</span>
+      Your permissions at call time are the <strong>intersection</strong> of the scopes seeded on your agent row
+      and the scopes present in the token you minted. A token requested with only <code>inventory:read</code>
+      cannot reserve, even if your row grants <code>reservation:write</code>. Mint tokens with exactly the scopes
+      the session needs. An empty intersection returns <code>NOT_AUTHORIZED</code>.
+    </div>
+    <div class="callout warn">
+      <span class="ttl">quote:negotiate is not issued at MM</span>
+      The negotiation scope is only meaningful on negotiation-enabled deployments. MM runs with negotiation off, so
+      it is not part of the bundle and the four negotiation tools are not registered.
+    </div>
+
+    <h2>6. Rate limits &amp; audit</h2>
+    <table class="field-table">
+      <thead><tr><th>Budget</th><th>Default</th><th>Ceiling (on request)</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">Requests / minute (burst)</td><td>60</td><td class="fconstraint">600</td></tr>
+        <tr><td class="fname">Reservations / day</td><td>5</td><td class="fconstraint">100</td></tr>
+        <tr><td class="fname">Audit retention</td><td>90 days</td><td class="fconstraint">365 days (with agreement)</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Rate-limit denials come back <em>in the envelope</em> as <code>RATE_LIMITED</code> (retryable), not as a
+      JSON-RPC error. Every response carries <code>_metadata.trace_id</code> — <strong>log it</strong>; it is the
+      only way we can correlate a complaint against the 90-day audit trail. Quote your <code>trace_id</code> and
+      any <code>error_id</code> in incident email.
+    </p>
+
+    <h2>7. Lifecycle</h2>
+    <ul class="prose">
+      <li><strong>Rotate (planned):</strong> mint a new secret in Auth0's dual-credential window, send us the new SHA-256 fingerprint; we update your row with no downtime.</li>
+      <li><strong>Revoke (compromise):</strong> email us; we run <code>seed_agent.py --revoke &lt;sub&gt;</code> — effective within seconds.</li>
+      <li><strong>Deactivate (end of agreement):</strong> we set <code>active = false</code>; existing tokens are cleanly rejected at the middleware.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="ttl">Reference material</span>
+      Spec source: <a href="https://github.com/mm-open/dmc-12" target="_blank" rel="noopener">github.com/mm-open/dmc-12</a> ·
+      served spec: <a href="https://dmc12.ai/specification/SPEC.md" target="_blank" rel="noopener">dmc12.ai/specification/SPEC.md</a> ·
+      schemas: <a href="https://dmc12.ai/schemas/inventory.json" target="_blank" rel="noopener">dmc12.ai/schemas/{capability}.json</a>.
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<script src="../assets/dmc12.js"></script>
+</body>
+</html>

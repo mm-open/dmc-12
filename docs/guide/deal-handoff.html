@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Deal hand-off — DMC-12 vendor integration guide</title>
+<meta name="description" content="initiate_deal_handoff: the one PII-accepting DMC-12 tool. An interactive request builder with live validation, PII badges, and copy-as params / A2A JSON-RPC / curl — plus the full field reference and what the dealer receives." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/dmc12.css">
+</head>
+<body>
+
+<div class="strip">
+  <div class="strip-inner">
+    <div class="brand">
+      <img class="glyph" src="https://dmc12.ai/branding/dmc12-mark-blue.png" alt="DMC-12">
+      <a href="../index.html">Mark&nbsp;Miller&nbsp;Subaru</a>
+      <span style="color:var(--line-strong); margin: 0 6px;">/</span>
+      <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12 guide</span>
+    </div>
+    <div class="meta mono">
+      <span><span class="dot"></span>endpoint live</span>
+      <span class="sep">·</span>
+      <span>DMC-12 v0.4 · 10 tools</span>
+    </div>
+  </div>
+</div>
+
+<div class="guide-shell">
+  <nav class="guide-nav">
+    <a class="home" href="../index.html">← dmc-12.ai</a>
+    <div class="nav-group">Vendor guide</div>
+    <ul>
+      <li><a data-page="index.html" href="index.html">Getting started</a></li>
+      <li><a data-page="inventory.html" href="inventory.html">Inventory</a></li>
+      <li><a data-page="quote.html" href="quote.html">Quotes</a></li>
+      <li><a data-page="reservation.html" href="reservation.html">Reservations</a></li>
+      <li><a data-page="deal-handoff.html" href="deal-handoff.html">Deal hand-off ★</a></li>
+      <li><a data-page="errors.html" href="errors.html">Error taxonomy</a></li>
+      <li><a data-page="onboarding.html" href="onboarding.html">Partner onboarding</a></li>
+    </ul>
+  </nav>
+
+  <main class="guide-main">
+    <h1>Deal hand-off</h1>
+    <p class="lede">
+      <span class="mono">initiate_deal_handoff</span> · scope
+      <span class="scope-pill handoff"><span class="pip"></span>deal:handoff</span> · the
+      <strong>one</strong> tool that accepts customer PII. It converts an active reservation into an emailed
+      deal-intent package for a live sales manager. PII is hashed in every audit/DB surface; plaintext flows only
+      to the dealer's inbox. Requires explicit <code>customer_consent: true</code>.
+    </p>
+
+    <div class="callout">
+      <span class="ttl">🔒 What "hashed" means here</span>
+      Fields marked <span class="badge badge-pii">🔒 hashed</span> are SHA-256'd before they touch the audit log
+      or the <code>deal_handoffs</code> table. The only place their plaintext lands is the outbound email to the
+      dealer desk (and the DriveCentric CRM lead, when enabled). Structured trade-in fields and consent
+      channels/expiry are <span class="badge badge-plain">plaintext</span> — they're not PII.
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- (a) + (b)  THE BUILDER                                            -->
+    <!-- ================================================================= -->
+    <h2>Build a request</h2>
+    <p>Toggle optional fields on and the request builds live below. Validation mirrors the server's Pydantic models, so a green banner means the call would be accepted as shaped.</p>
+
+    <div class="builder" id="handoff-builder">
+      <!-- Required -->
+      <div class="group">
+        <div class="group-head">Required</div>
+
+        <div class="field-row">
+          <div class="flabel">
+            <span class="fname">reservation_token</span>
+            <span class="badges"><span class="badge badge-req">required</span></span>
+          </div>
+          <div class="finput">
+            <input type="text" id="f-reservation_token" placeholder="rsv_Qh7m…" value="rsv_Qh7mKpExampleToken00000000000000">
+            <div class="err"></div>
+            <div class="hint">10–80 chars · an active hold from create_reservation</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="flabel">
+            <span class="fname">customer_contact.name</span>
+            <span class="badges"><span class="badge badge-req">required</span><span class="badge badge-pii">🔒 hashed</span></span>
+          </div>
+          <div class="finput">
+            <input type="text" id="f-name" placeholder="Jane Doe" value="Jane Doe">
+            <div class="err"></div>
+            <div class="hint">1–120 chars</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="flabel">
+            <span class="fname">customer_contact.phone</span>
+            <span class="badges"><span class="badge badge-req">required</span><span class="badge badge-pii">🔒 hashed</span></span>
+          </div>
+          <div class="finput">
+            <input type="tel" id="f-phone" placeholder="+15555551234" value="+15555551234">
+            <div class="err"></div>
+            <div class="hint">E.164 · 8–20 chars · ^+[1-9][0-9]{6,14}$</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="flabel">
+            <span class="fname">customer_contact.email</span>
+            <span class="badges"><span class="badge badge-req">required</span><span class="badge badge-pii">🔒 hashed</span></span>
+          </div>
+          <div class="finput">
+            <input type="email" id="f-email" placeholder="jane@example.com" value="jane@example.com">
+            <div class="err"></div>
+            <div class="hint">5–320 chars · RFC-5322-ish</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="flabel">
+            <span class="fname">customer_consent</span>
+            <span class="badges"><span class="badge badge-req">required</span></span>
+          </div>
+          <div class="finput">
+            <input type="text" id="f-consent-display" name="customer_consent_display" value="true" disabled style="opacity:.6;">
+            <div class="hint">fixed <code>true</code> — the validator rejects <code>false</code> (PII transfer requires explicit consent)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional -->
+      <div class="group">
+        <div class="group-head">Optional — toggle to include</div>
+
+        <!-- financing_preference -->
+        <label class="toggle-row">
+          <input type="checkbox" id="toggle-financing">
+          <span class="tname">financing_preference</span>
+          <span class="tdesc">enum — defaults to "unknown" if omitted</span>
+        </label>
+        <div class="toggle-body" id="body-financing" hidden>
+          <div class="field-row">
+            <div class="flabel"><span class="fname">financing_preference</span></div>
+            <div class="finput">
+              <select id="f-financing">
+                <option value="unknown" selected>unknown</option>
+                <option value="cash">cash</option>
+                <option value="finance">finance</option>
+                <option value="lease">lease</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- notes -->
+        <label class="toggle-row">
+          <input type="checkbox" id="toggle-notes">
+          <span class="tname">notes</span>
+          <span class="tdesc">free text · 🔒 hashed</span>
+        </label>
+        <div class="toggle-body" id="body-notes" hidden>
+          <div class="field-row">
+            <div class="flabel">
+              <span class="fname">notes</span>
+              <span class="badges"><span class="badge badge-pii">🔒 hashed</span></span>
+            </div>
+            <div class="finput">
+              <input type="text" id="f-notes" placeholder="Return buyer; purchased a 2022 Outback in 2022.">
+              <div class="err"></div>
+              <div class="hint">≤ 500 chars · plaintext reaches the dealer email only</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- trade_in -->
+        <label class="toggle-row">
+          <input type="checkbox" id="toggle-trade_in">
+          <span class="tname">trade_in</span>
+          <span class="tdesc">8 sub-fields · any populated field flips trade_in_disclosed</span>
+        </label>
+        <div class="toggle-body" id="body-trade_in" hidden>
+          <div class="field-row">
+            <div class="flabel">
+              <span class="fname">trade_in.description</span>
+              <span class="badges"><span class="badge badge-pii">🔒 hashed</span></span>
+            </div>
+            <div class="finput">
+              <input type="text" id="f-ti_description" placeholder="Single owner, clean Carfax">
+              <div class="err"></div>
+              <div class="hint">≤ 500 chars</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel">
+              <span class="fname">trade_in.appraised_value_partner</span>
+              <span class="badges"><span class="badge badge-plain">💲 Money</span></span>
+            </div>
+            <div class="finput">
+              <div style="display:flex; gap:8px;">
+                <input type="number" id="f-ti_amount" placeholder="18500" step="0.01" min="0" style="flex:2;">
+                <input type="text" id="f-ti_currency" placeholder="USD" value="USD" maxlength="3" style="flex:1; text-transform:uppercase;">
+              </div>
+              <div class="err" data-err-for="f-ti_amount"></div>
+              <div class="err" data-err-for="f-ti_currency"></div>
+              <div class="hint">{ amount ≥ 0, currency ISO-4217 } · a partner hint, MM re-appraises</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel"><span class="fname">trade_in.vin</span></div>
+            <div class="finput">
+              <input type="text" id="f-ti_vin" placeholder="JF2GTACC4K8200000" style="text-transform:uppercase;">
+              <div class="err"></div>
+              <div class="hint">17 chars, no I/O/Q</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel"><span class="fname">trade_in.year</span></div>
+            <div class="finput">
+              <input type="number" id="f-ti_year" placeholder="2019" min="1900" max="2100">
+              <div class="err"></div>
+              <div class="hint">1900–2100</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel"><span class="fname">trade_in.make</span></div>
+            <div class="finput">
+              <input type="text" id="f-ti_make" placeholder="Subaru">
+              <div class="err"></div>
+              <div class="hint">≤ 40 chars</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel"><span class="fname">trade_in.model</span></div>
+            <div class="finput">
+              <input type="text" id="f-ti_model" placeholder="Crosstrek">
+              <div class="err"></div>
+              <div class="hint">≤ 80 chars</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel"><span class="fname">trade_in.mileage</span></div>
+            <div class="finput">
+              <input type="number" id="f-ti_mileage" placeholder="48000" min="0" max="1000000">
+              <div class="err"></div>
+              <div class="hint">0–1,000,000</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel"><span class="fname">trade_in.condition</span></div>
+            <div class="finput">
+              <select id="f-ti_condition">
+                <option value="" selected>— (none)</option>
+                <option value="excellent">excellent</option>
+                <option value="good">good</option>
+                <option value="fair">fair</option>
+                <option value="poor">poor</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- consent -->
+        <label class="toggle-row">
+          <input type="checkbox" id="toggle-consent">
+          <span class="tname">consent</span>
+          <span class="tdesc">channel-scoped consent (v0.1.2) · expiry is enforced</span>
+        </label>
+        <div class="toggle-body" id="body-consent" hidden>
+          <div class="field-row">
+            <div class="flabel">
+              <span class="fname">consent.allowed_channels</span>
+              <span class="badges"><span class="badge badge-plain">plaintext</span></span>
+            </div>
+            <div class="finput" id="f-consent_channels_marker">
+              <div class="checkbox-set">
+                <label><input type="checkbox" class="consent-channel" value="email"> email</label>
+                <label><input type="checkbox" class="consent-channel" value="phone"> phone</label>
+                <label><input type="checkbox" class="consent-channel" value="sms"> sms</label>
+              </div>
+              <div class="err"></div>
+              <div class="hint">≥ 1, unique · advisory (surfaced to dealer-ops, never auto-contacted)</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel">
+              <span class="fname">consent.expires_at</span>
+              <span class="badges"><span class="badge badge-plain">plaintext</span></span>
+            </div>
+            <div class="finput">
+              <input type="datetime-local" id="f-consent_expires_at">
+              <div class="err"></div>
+              <div class="hint">tz-aware on the wire (sent as UTC Z) · a past time → CONSENT_INVALID</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="flabel">
+              <span class="fname">consent.consent_text</span>
+              <span class="badges"><span class="badge badge-pii">🔒 hashed</span></span>
+            </div>
+            <div class="finput">
+              <input type="text" id="f-consent_text" placeholder="Customer authorized follow-up by email and phone on 2026-05-27.">
+              <div class="err"></div>
+              <div class="hint">≤ 2000 chars · verbatim authorization language</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div id="builder-status" class="builder-status ok">✓ request valid</div>
+    <div class="builder-out">
+      <div class="tabs">
+        <button class="tab active" data-tab="params">params</button>
+        <button class="tab" data-tab="jsonrpc">A2A JSON-RPC</button>
+        <button class="tab" data-tab="curl">curl</button>
+      </div>
+      <div class="out-body">
+        <button class="out-copy" id="out-copy">Copy</button>
+        <pre id="out-pre"></pre>
+      </div>
+    </div>
+    <p class="hint" style="font-size:12.5px; color:var(--ink-mute);">
+      <code>$DMC12_TOKEN</code> in the curl tab is a literal placeholder — swap in the bearer token you mint per
+      <a href="onboarding.html">Partner onboarding</a>. The endpoint origin is injected from the shared
+      <code>MCP_BASE</code>.
+    </p>
+
+    <!-- ================================================================= -->
+    <!-- (c)  STATIC REFERENCE                                             -->
+    <!-- ================================================================= -->
+    <h2>Full field reference</h2>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Constraint · PII</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">reservation_token</td><td class="ftype">string</td><td><span class="badge badge-req">req</span></td><td class="fconstraint">10–80 chars</td></tr>
+        <tr><td class="fname">customer_contact.name</td><td class="ftype">string</td><td><span class="badge badge-req">req</span></td><td class="fconstraint">1–120 · <span class="badge badge-pii">🔒</span></td></tr>
+        <tr><td class="fname">customer_contact.phone</td><td class="ftype">string</td><td><span class="badge badge-req">req</span></td><td class="fconstraint">E.164, 8–20 · <span class="badge badge-pii">🔒</span></td></tr>
+        <tr><td class="fname">customer_contact.email</td><td class="ftype">string</td><td><span class="badge badge-req">req</span></td><td class="fconstraint">5–320 · <span class="badge badge-pii">🔒</span></td></tr>
+        <tr><td class="fname">customer_consent</td><td class="ftype">bool</td><td><span class="badge badge-req">req</span></td><td class="fconstraint">const <code>true</code></td></tr>
+        <tr><td class="fname">financing_preference</td><td class="ftype">enum</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">cash|finance|lease|unknown (def unknown)</td></tr>
+        <tr><td class="fname">notes</td><td class="ftype">string</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">≤500 · <span class="badge badge-pii">🔒</span></td></tr>
+        <tr><td class="fname">trade_in_disclosed</td><td class="ftype">bool</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">auto-true if any trade_in field set</td></tr>
+        <tr><td class="fname">trade_in</td><td class="ftype">object</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">extra fields forbidden</td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.description</td><td class="ftype">string</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">≤500 · <span class="badge badge-pii">🔒</span></td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.appraised_value_partner</td><td class="ftype">Money</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">{amount≥0, currency ^[A-Z]{3}$} · <span class="badge badge-plain">💲</span></td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.vin</td><td class="ftype">string</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">^[A-HJ-NPR-Z0-9]{17}$</td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.year</td><td class="ftype">int</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">1900–2100</td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.make</td><td class="ftype">string</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">≤40</td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.model</td><td class="ftype">string</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">≤80</td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.mileage</td><td class="ftype">int</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">0–1,000,000</td></tr>
+        <tr class="sub-row"><td class="fname">trade_in.condition</td><td class="ftype">enum</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">excellent|good|fair|poor</td></tr>
+        <tr><td class="fname">consent</td><td class="ftype">object</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">extra fields forbidden</td></tr>
+        <tr class="sub-row"><td class="fname">consent.allowed_channels</td><td class="ftype">enum[]</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">≥1 unique of email|phone|sms · advisory</td></tr>
+        <tr class="sub-row"><td class="fname">consent.expires_at</td><td class="ftype">datetime</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">tz-aware · enforced (CONSENT_INVALID if past)</td></tr>
+        <tr class="sub-row"><td class="fname">consent.consent_text</td><td class="ftype">string</td><td><span class="badge badge-opt">opt</span></td><td class="fconstraint">≤2000 · <span class="badge badge-pii">🔒</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Worked examples</h2>
+    <h3>Minimal — bare boolean consent</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{
+  "reservation_token": "rsv_Qh7m…",
+  "customer_contact": { "name": "Jane Doe", "phone": "+15555551234", "email": "jane@example.com" },
+  "financing_preference": "unknown",
+  "trade_in_disclosed": false,
+  "customer_consent": true
+}</pre>
+    </div>
+    <h3>+ trade_in</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{
+  "reservation_token": "rsv_Qh7m…",
+  "customer_contact": { "name": "Jane Doe", "phone": "+15555551234", "email": "jane@example.com" },
+  "customer_consent": true,
+  "financing_preference": "finance",
+  "trade_in_disclosed": true,
+  "trade_in": {
+    "description": "Single owner, clean Carfax",
+    "appraised_value_partner": { "amount": 18500, "currency": "USD" },
+    "vin": "JF2GTACC4K8200000", "year": 2019, "make": "Subaru",
+    "model": "Crosstrek", "mileage": 48000, "condition": "good"
+  }
+}</pre>
+    </div>
+    <h3>+ consent (channel-scoped)</h3>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{
+  "reservation_token": "rsv_Qh7m…",
+  "customer_contact": { "name": "Jane Doe", "phone": "+15555551234", "email": "jane@example.com" },
+  "financing_preference": "unknown",
+  "trade_in_disclosed": false,
+  "customer_consent": true,
+  "consent": {
+    "allowed_channels": ["email", "phone"],
+    "expires_at": "2026-06-01T00:00:00Z",
+    "consent_text": "Customer authorized follow-up by email and phone on 2026-05-27."
+  }
+}</pre>
+    </div>
+    <h3>Full — everything populated</h3>
+    <p>Use the builder above and toggle every optional field on; the <strong>params</strong> tab renders the full request.</p>
+
+    <h2>What the dealer receives</h2>
+    <p>On success the tool emails a deal-intent package to the dealer desk and returns a <strong>masked receipt</strong> — no plaintext customer data in the response:</p>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{ "data": {
+    "handoff_token": "hnd_xyz…",
+    "sent_to_masked": "be****@markmillersubaru.com, ch****@markmillersubaru.com",
+    "sent_at": "2026-05-27T18:22:01+00:00",
+    "status": "sent",
+    "crm_status": "sent",        // "sent" | "failed" | "disabled"
+    "crm_lead_id": "hnd_xyz…",
+    "next_steps": "A sales manager will contact ja****@example.com within 1 business day…"
+  },
+  "_metadata": { "trace_id": "trc_…", "tool": "initiate_deal_handoff", "protocol": "a2a" }
+}</pre>
+    </div>
+    <ul class="prose">
+      <li><strong>Email is the contract.</strong> The hand-off is recorded only after the dealer-ops email sends; an SMTP failure returns <code>UPSTREAM_UNAVAILABLE</code> (<code>email_send_failed</code>) and persists nothing.</li>
+      <li><strong>CRM is best-effort.</strong> A DriveCentric lead (ADF 1.0 XML) is created when enabled; failure is logged as <code>crm_status: "failed"</code> but the call still succeeds. <code>crm_status: "disabled"</code> means the CRM sink is off.</li>
+      <li><strong>crm_status outcomes:</strong> <code>sent</code> · <code>failed</code> · <code>disabled</code>.</li>
+      <li><strong>Not a sale.</strong> The reservation is still a soft hold; a human negotiates itemization (tax, doc, trade) and runs the deal through the DMS. There is no status-update tool — transitions happen dealer-side.</li>
+    </ul>
+
+    <div class="callout warn">
+      <span class="ttl">Ownership &amp; expiry</span>
+      The reservation must be <code>active</code> and owned by your agent. Common errors:
+      <code>RESERVATION_NOT_FOUND</code>, <code>RESERVATION_STATE</code>, <code>RESERVATION_EXPIRED</code>,
+      <code>NOT_AUTHORIZED</code> (token owned by another agent), <code>CONSENT_INVALID</code> (supplied
+      <code>consent.expires_at</code> in the past). Full list on the <a href="errors.html">error taxonomy</a> page.
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<script src="../assets/dmc12.js"></script>
+<script src="../assets/handoff-builder.js"></script>
+</body>
+</html>
