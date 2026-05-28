@@ -79,6 +79,13 @@
     box-shadow: 0 0 0 3px rgba(25,179,106,.15);
   }
   .strip .meta .sep { color: var(--line-strong); }
+  .strip .nav {
+    display: flex; gap: 9px; align-items: center; flex-wrap: wrap;
+    color: var(--ink-soft);
+  }
+  .strip .nav a { color: var(--ink-soft); text-decoration: none; }
+  .strip .nav a:hover { color: var(--accent); }
+  .strip .nav .sep { color: var(--line-strong); }
 
   .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad); }
   section { padding: 72px 0; border-bottom: 1px solid var(--line); }
@@ -709,6 +716,13 @@
       <span style="color:var(--line-strong); margin: 0 6px;">/</span>
       <span style="color:var(--ink-mute); font-weight: 500;" class="mono">dmc-12</span>
     </div>
+    <nav class="nav mono">
+      <a href="guide/index.html">Guide</a>
+      <span class="sep">·</span>
+      <a href="https://dmc12.ai/specification/SPEC.md">Spec</a>
+      <span class="sep">·</span>
+      <a href="https://github.com/mm-open/dmc-12">GitHub</a>
+    </nav>
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
@@ -740,6 +754,7 @@
     <div class="cta-row">
       <a class="btn primary" href="#consumer">For consumer AI users <span class="arr">→</span></a>
       <a class="btn" href="#partner">For B2B partners <span class="arr">→</span></a>
+      <a class="btn" href="guide/index.html">Integration guide <span class="arr">→</span></a>
       <a class="btn" href="#verify" style="border-color: transparent;">Verify us <span class="arr">→</span></a>
     </div>
 
@@ -842,12 +857,12 @@
       <div class="tool read">
         <div class="scope"><span class="pip"></span>pricing:read</div>
         <div class="name">get_pricing_disclosure</div>
-        <div class="desc">Itemized out-the-door estimate — taxes, doc fee, title, registration. Read-only; non-binding; surfaced once MM ops finalizes fee values.</div>
+        <div class="desc">Itemized out-the-door estimate — taxes, doc fee, title, registration. Read-only; non-binding; live at MM.</div>
       </div>
       <div class="tool write">
         <div class="scope"><span class="pip"></span>quote:write</div>
         <div class="name">request_quote</div>
-        <div class="desc">Issue a 30-minute quote at the listed asking price. No parameter accepts a proposed price. Carries an optional non-binding out-the-door estimate once pricing disclosure is enabled.</div>
+        <div class="desc">Issue a 30-minute quote at the listed asking price. No parameter accepts a proposed price. Carries an optional non-binding out-the-door estimate from pricing disclosure, live at MM.</div>
       </div>
       <div class="tool write">
         <div class="scope"><span class="pip"></span>reservation:write</div>
@@ -950,7 +965,7 @@
           <a class="btn" href="guide/index.html" style="width:100%; justify-content:center; margin-top:10px;">
             Read the integration guide <span class="arr">→</span>
           </a>
-          <p class="note">We'll issue you an Auth0 M2M client on <span class="mono">mmbrain-prod.us.auth0.com</span> (audience&nbsp;<span class="mono">mm-inventory-mcp</span>), seed a row in <span class="mono">mm_inventory.agents</span>, and point you at the partner onboarding guide. Typical turnaround: same day.</p>
+          <p class="note">We'll issue you an Auth0 M2M client on <span class="mono">mmbrain-prod.us.auth0.com</span> (audience&nbsp;<span class="mono">mm-inventory-mcp</span>), seed a row in <span class="mono">mm_inventory.agents</span>, and point you at the <a href="guide/onboarding.html">partner onboarding guide</a>. Typical turnaround: same day.</p>
         </div>
       </div>
 
@@ -1068,7 +1083,7 @@
           <span class="hint">2026-05-26 · current release</span>
         </div>
         <div class="summary">
-          Additive, non-breaking. <span class="mono">search_inventory</span> ergonomics — optional natural-language query (omit it for a structured filter+sort), agent-controlled <span class="mono">sort_by</span> / <span class="mono">sort_order</span>, and a <span class="mono">min_price</span> floor (capability <span class="mono">inventory</span> → 0.2.0); a <span class="mono">min_year</span> / <span class="mono">max_year</span> range on <span class="mono">list_inventory</span>; and an optional, non-binding <span class="mono">out_the_door</span> estimate on the <span class="mono">request_quote</span> output (capability <span class="mono">quote</span> → 0.3.0), emitted only once pricing disclosure is enabled. No new tools.
+          Additive, non-breaking. <span class="mono">search_inventory</span> ergonomics — optional natural-language query (omit it for a structured filter+sort), agent-controlled <span class="mono">sort_by</span> / <span class="mono">sort_order</span>, and a <span class="mono">min_price</span> floor (capability <span class="mono">inventory</span> → 0.2.0); a <span class="mono">min_year</span> / <span class="mono">max_year</span> range on <span class="mono">list_inventory</span>; and an optional, non-binding <span class="mono">out_the_door</span> estimate on the <span class="mono">request_quote</span> output (capability <span class="mono">quote</span> → 0.3.0), sourced from pricing disclosure (live at MM). No new tools.
         </div>
       </div>
       <div class="verify-row">
@@ -1135,6 +1150,7 @@
         <span class="name">Mark Miller Subaru</span>
       </div>
       <p class="about">Independent multi-store dealer group in Salt Lake City. We built our MCP&nbsp;+&nbsp;A2A&nbsp;+&nbsp;UCP surface in-house on FastAPI + Cloud Run because we thought someone should go first.</p>
+      <p class="about muted">DMC-12 authored by Chris Hudson (General Manager) &amp; Ben Reuling (AI Systems Engineer), Mark Miller Subaru.</p>
     </div>
     <div class="col">
       <h4>Contact</h4>
