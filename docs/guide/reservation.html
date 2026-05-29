@@ -23,7 +23,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>DMC-12 v0.4 · 10 tools</span>
+      <span>DMC-12 v0.5 · 10 tools</span>
     </div>
   </div>
 </div>
@@ -135,6 +135,24 @@
   "status": "active" }</pre>
     </div>
     <p>Status values: <code>active</code>, <code>released</code>, <code>expired</code>, <code>converted</code>. <code>released_by</code> is <code>agent</code> for an agent-initiated release. Errors: <code>RESERVATION_NOT_FOUND</code>, <code>NOT_AUTHORIZED</code> (owned by another agent).</p>
+
+    <h2>Response fields</h2>
+    <p class="prose">Shared across <code>create_reservation</code>, <code>release_reservation</code>, and <code>get_reservation_status</code>. See <a href="index.html#data-formats">Data formats</a> for the timestamp / Money / opaque-token conventions.</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">reservation_token</td><td class="ftype">string</td><td><span class="badge badge-plain">create / status</span></td><td>Opaque hold handle (10–80 chars). Use it for <code>release_reservation</code>, <code>get_reservation_status</code>, and <code>initiate_deal_handoff</code>. Do not parse.</td></tr>
+        <tr><td class="fname">vin</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>The held VIN.</td></tr>
+        <tr><td class="fname">reserved_price</td><td class="ftype">number</td><td><span class="badge badge-plain">create / status</span></td><td>Price locked at hold creation — the quote's <code>quoted_price</code>. Non-binding.</td></tr>
+        <tr><td class="fname">status</td><td class="ftype">enum</td><td><span class="badge badge-plain">always</span></td><td><code>active</code> | <code>released</code> | <code>expired</code> | <code>converted</code>.</td></tr>
+        <tr><td class="fname">created_at</td><td class="ftype">string</td><td><span class="badge badge-plain">create / status</span></td><td>ISO-8601 UTC — when the hold was created.</td></tr>
+        <tr><td class="fname">expires_at</td><td class="ftype">string</td><td><span class="badge badge-plain">create / status</span></td><td>ISO-8601 UTC — <code>created_at</code> + 30 min. After this the hold lazy-expires.</td></tr>
+        <tr><td class="fname">released_at</td><td class="ftype">string | null</td><td><span class="badge badge-opt">status / release</span></td><td>ISO-8601 UTC when released; <code>null</code> while the hold is still active.</td></tr>
+        <tr><td class="fname">released_by</td><td class="ftype">string | null</td><td><span class="badge badge-opt">status</span></td><td><code>agent</code> for an agent-initiated release; <code>null</code> while active or if it expired untouched.</td></tr>
+        <tr><td class="fname">already_closed</td><td class="ftype">boolean</td><td><span class="badge badge-opt">release</span></td><td><code>true</code> on an idempotent re-release of an already released/expired hold (no error). Absent on the first release.</td></tr>
+        <tr><td class="fname">terms</td><td class="ftype">string</td><td><span class="badge badge-plain">create</span></td><td>Human-readable hold terms.</td></tr>
+      </tbody>
+    </table>
 
     <h2>Next step</h2>
     <p>While a reservation is <code>active</code> you have a 30-minute window to either release it or run <a href="deal-handoff.html">initiate_deal_handoff</a> to bring a human into the loop. Let the window lapse and the hold expires automatically.</p>

@@ -23,7 +23,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>DMC-12 v0.4 · 10 tools</span>
+      <span>DMC-12 v0.5 · 10 tools</span>
     </div>
   </div>
 </div>
@@ -425,6 +425,20 @@
   "_metadata": { "trace_id": "trc_…", "tool": "initiate_deal_handoff", "protocol": "a2a" }
 }</pre>
     </div>
+    <h3>Response fields</h3>
+    <p class="prose">The masked receipt. No plaintext customer data is ever returned. See <a href="index.html#data-formats">Data formats</a> for timestamp / enum conventions.</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">handoff_token</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>Opaque receipt handle for the recorded hand-off. Do not parse.</td></tr>
+        <tr><td class="fname">sent_to_masked</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>Comma-separated, masked dealer-desk recipients (e.g. <code>be****@…</code>) — confirms where the package went without exposing addresses.</td></tr>
+        <tr><td class="fname">sent_at</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>ISO-8601 UTC — when the dealer-ops email sent (the moment the hand-off became real).</td></tr>
+        <tr><td class="fname">status</td><td class="ftype">enum</td><td><span class="badge badge-plain">always</span></td><td><code>sent</code> on success. The email is the contract — a send failure returns an error, not a status.</td></tr>
+        <tr><td class="fname">crm_status</td><td class="ftype">enum</td><td><span class="badge badge-plain">always</span></td><td><code>sent</code> | <code>failed</code> | <code>disabled</code>. Best-effort DriveCentric (ADF 1.0) lead outcome; <code>disabled</code> means the CRM sink is off. A <code>failed</code> CRM does not fail the call.</td></tr>
+        <tr><td class="fname">crm_lead_id</td><td class="ftype">string | null</td><td><span class="badge badge-opt">optional</span></td><td>CRM lead identifier when a lead was created; <code>null</code>/absent when <code>crm_status</code> is <code>failed</code> or <code>disabled</code>.</td></tr>
+        <tr><td class="fname">next_steps</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>Human-readable follow-up summary, with the customer email masked.</td></tr>
+      </tbody>
+    </table>
     <ul class="prose">
       <li><strong>Email is the contract.</strong> The hand-off is recorded only after the dealer-ops email sends; an SMTP failure returns <code>UPSTREAM_UNAVAILABLE</code> (<code>email_send_failed</code>) and persists nothing.</li>
       <li><strong>CRM is best-effort.</strong> A DriveCentric lead (ADF 1.0 XML) is created when enabled; failure is logged as <code>crm_status: "failed"</code> but the call still succeeds. <code>crm_status: "disabled"</code> means the CRM sink is off.</li>

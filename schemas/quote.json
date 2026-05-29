@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dmc12.ai/schemas/quote.json",
-  "title": "DMC-12 Quote Capability v0.3.0",
+  "title": "DMC-12 Quote Capability v0.4.0",
   "description": "Input/output schema for ai.dmc12.automotive.quote (request_quote).",
   "type": "object",
   "properties": {
@@ -38,8 +38,8 @@
         "expires_at": {"type": "string", "format": "date-time"},
         "terms": {"type": "string"},
         "out_the_door": {
-          "$ref": "common.json#/$defs/Money",
-          "description": "OPTIONAL best-effort, non-binding out-the-door estimate derived from `quoted_price` plus the merchant's published fee schedule (tax + doc + title + registration). Present only when the merchant has pricing disclosure enabled and a live fee schedule; omitted otherwise. Never a commitment — see `ai.dmc12.automotive.pricing_disclosure` for the itemized breakdown."
+          "$ref": "common.json#/$defs/OutTheDoorEstimate",
+          "description": "OPTIONAL best-effort, non-binding, itemized out-the-door estimate derived from `quoted_price` plus the merchant's published fee schedule. Carries the OTD `amount`/`currency` total plus `price_lines` (vehicle price + each fee/tax line), `fees_total`, `taxes_total`, and disclosure metadata (`estimate`, `jurisdiction`, `as_of`, `disclosure_form_url`). Present only when the merchant has pricing disclosure enabled and a live fee schedule; omitted otherwise. Never a commitment — `quoted_price` stays the only firm figure. Mirrors `ai.dmc12.automotive.pricing_disclosure` (subtotal omitted — derivable as `amount - taxes_total`)."
         },
         "out_the_door_estimate": {
           "const": true,
@@ -63,11 +63,29 @@
       "output": {
         "quote_id": "c2f1e0f4-4f9a-4b9e-9d7a-8c2d0f1a2b34",
         "vin": "JF2GTHMC4P8123456",
-        "quoted_price": 33985.00,
+        "quoted_price": 52652.00,
         "currency": "USD",
         "created_at": "2026-04-21T18:00:00Z",
         "expires_at": "2026-04-21T18:30:00Z",
-        "terms": "Price valid for 30 minutes. No negotiation. See dealer for out-the-door pricing."
+        "terms": "Quote valid for 30 minutes at the listed asking price. No negotiation. Convert to a reservation with create_reservation.",
+        "out_the_door": {
+          "amount": 53097.00,
+          "currency": "USD",
+          "price_lines": [
+            {"label": "Vehicle price", "kind": "vehicle_price", "payee": "dealer", "amount": {"amount": 52652.00, "currency": "USD"}, "negotiable": false},
+            {"label": "Documentation fee", "kind": "doc", "payee": "dealer", "amount": {"amount": 445.00, "currency": "USD"}, "negotiable": false},
+            {"label": "Title fee", "kind": "title", "payee": "government", "amount": {"amount": 0, "currency": "USD"}},
+            {"label": "Registration fee", "kind": "registration", "payee": "government", "amount": {"amount": 0, "currency": "USD"}},
+            {"label": "Utah sales tax", "kind": "tax", "payee": "government", "amount": {"amount": 0, "currency": "USD"}, "statutory_basis": "Utah motor-vehicle sales tax"}
+          ],
+          "fees_total": {"amount": 445.00, "currency": "USD"},
+          "taxes_total": {"amount": 0, "currency": "USD"},
+          "estimate": true,
+          "jurisdiction": "US-UT",
+          "as_of": "2026-04-21T18:00:00Z",
+          "disclosure_form_url": "https://dmv.utah.gov/sites/default/files/documents/mved-tx-disclosure-form.pdf"
+        },
+        "out_the_door_estimate": true
       }
     }
   ]

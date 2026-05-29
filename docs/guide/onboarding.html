@@ -23,7 +23,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>DMC-12 v0.4 · 10 tools</span>
+      <span>DMC-12 v0.5 · 10 tools</span>
     </div>
   </div>
 </div>
@@ -95,6 +95,25 @@
     "grant_type":    "client_credentials"
   }' | jq -r .access_token)</pre>
     </div>
+    <p>Auth0 returns a standard client-credentials token response:</p>
+    <div class="code">
+      <button class="copy mono">Copy</button>
+<pre>{
+  "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6…",   // the RS256 JWT — send as Bearer
+  "expires_in": 3600,                                  // seconds; re-mint before this elapses
+  "token_type": "Bearer",
+  "scope": "inventory:read quote:write reservation:write deal:handoff pricing:read"
+}</pre>
+    </div>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">access_token</td><td class="ftype">string</td><td>The RS256 JWT. Send as <code>Authorization: Bearer &lt;access_token&gt;</code> on every <code>/a2a/</code> call.</td></tr>
+        <tr><td class="fname">expires_in</td><td class="ftype">int</td><td>Lifetime in seconds (3600). Cache and re-mint before it lapses.</td></tr>
+        <tr><td class="fname">token_type</td><td class="ftype">string</td><td>Always <code>Bearer</code>.</td></tr>
+        <tr><td class="fname">scope</td><td class="ftype">string</td><td>Space-delimited granted scopes. Your effective set at call time is this ∩ your agent row (see §5).</td></tr>
+      </tbody>
+    </table>
     <p><strong>Cache the token ~55 minutes</strong> and re-mint before expiry. Minting on every request will get you rate-limited at Auth0.</p>
 
     <h2>4. Call a tool</h2>
@@ -154,6 +173,16 @@
       only way we can correlate a complaint against the 90-day audit trail. Quote your <code>trace_id</code> and
       any <code>error_id</code> in incident email.
     </p>
+    <div class="callout">
+      <span class="ttl">Backoff on RATE_LIMITED</span>
+      Treat <code>RATE_LIMITED</code> as retryable: <strong>exponential backoff with jitter</strong> (e.g. ~1s, 2s,
+      4s … capped, plus a random fraction) and a sane max-attempt ceiling — don't hot-loop. Stay under your
+      per-minute burst rather than relying on retries. Note the reservation budget is separate from the rate limit:
+      <code>create_reservation</code> charges your <strong>daily</strong> reservation budget, and a
+      <strong>same-UTC-day</strong> <code>release_reservation</code> refunds that slot — so a held-then-released VIN
+      within the day costs nothing against the budget. See the <a href="errors.html">error taxonomy</a> for which
+      codes are retryable.
+    </div>
 
     <h2>7. Lifecycle</h2>
     <ul class="prose">

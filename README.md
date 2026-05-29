@@ -55,13 +55,19 @@ capabilities publish `payment.handlers: []` until AP2 lands.
 
 ## Status
 
-**v0.4 (Current Release, 2026-05-26).** Reference implementation in
+**v0.5 (Current Release, 2026-05-29).** Reference implementation in
 production at Mark Miller Subaru Midtown (Salt Lake City, UT).
 
-Added in v0.4 (current release) — all additive and non-breaking:
+Added in v0.5 (current release) — additive for OTD-omitting payloads; the one optional `out_the_door` field changes shape (field-access compatible — `amount`/`currency` stay at the top level). See [`SPEC.md`](./SPEC.md) §15.
+
+- `ai.dmc12.automotive.quote` → **capability 0.4.0** — the quote output's optional `out_the_door` estimate is now **itemized**: it changes from a bare `Money` total to an `OutTheDoorEstimate` (new in `common.json` 0.2.0) carrying `price_lines` (vehicle price + each fee/tax line), `fees_total`, `taxes_total`, and disclosure metadata (`estimate`, `jurisdiction`, `as_of`, `disclosure_form_url`). `subtotal` is omitted (derivable). The `out_the_door_estimate: true` pairing and the field's optionality are unchanged. No new tools, scopes, or fee-math change.
+
+See [`SPEC.md`](./SPEC.md) §15.
+
+Added in v0.4 — all additive and non-breaking:
 
 - `ai.dmc12.automotive.inventory` → **capability 0.2.0** — `search_inventory` gains an optional `query` (structured-only search when omitted), agent-controlled `sort_by` / `sort_order`, and a `min_price` floor; `list_inventory` gains a `min_year` / `max_year` range. Vehicle record unchanged.
-- `ai.dmc12.automotive.quote` → **capability 0.3.0** — the quote output gains an optional, non-binding `out_the_door` estimate (+ `out_the_door_estimate: true`), emitted only when the merchant has pricing disclosure enabled with a live fee schedule
+- `ai.dmc12.automotive.quote` → **capability 0.3.0** — the quote output gains an optional, non-binding `out_the_door` estimate (+ `out_the_door_estimate: true`), emitted only when the merchant has pricing disclosure enabled with a live fee schedule (itemized in v0.5, above)
 
 See [`SPEC.md`](./SPEC.md) §14.
 

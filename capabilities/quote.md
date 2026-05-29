@@ -1,6 +1,6 @@
 ---
 capability: ai.dmc12.automotive.quote
-version: 0.3.0
+version: 0.4.0
 status: implemented
 extends: dev.ucp.shopping.checkout
 authors:
@@ -8,11 +8,23 @@ authors:
   - chris-hudson
 ---
 
-> **v0.3 capability bump (DMC-12 v0.4 cut, additive/non-breaking).** Adds two
-> OPTIONAL output fields — `out_the_door` (a non-binding OTD estimate) and the
-> `out_the_door_estimate: true` flag. Both are absent unless the merchant has
-> pricing disclosure enabled with a live fee schedule, so a v0.1/v0.2 quote
-> payload (no OTD) still validates against the v0.3 schema. No input change.
+> **v0.4 capability bump (DMC-12 v0.5 cut).** The `out_the_door` field is now
+> **itemized**: its `$ref` changes from `Money` to `OutTheDoorEstimate`,
+> carrying `price_lines` (vehicle price + each fee/tax line), `fees_total`,
+> `taxes_total`, and disclosure metadata (`estimate`, `jurisdiction`, `as_of`,
+> `disclosure_form_url`) alongside the OTD `amount`/`currency` total. No input
+> change. `subtotal` is omitted — derivable as `amount - taxes_total.amount`.
+> **Compatibility:** the field stays OPTIONAL and the `out_the_door_estimate:
+> true` pairing is unchanged, so any payload that *omits* the OTD still
+> validates — but a payload that *carried* the old bare-`Money` OTD no longer
+> validates against this schema. That is a breaking change to this one optional
+> field (permitted pre-1.0), deliberately **field-access compatible**:
+> `amount`/`currency` stay at the top level where the bare total used to sit.
+>
+> **v0.3 capability bump (DMC-12 v0.4 cut).** Added two OPTIONAL output fields —
+> `out_the_door` (then a bare `Money` total) and the `out_the_door_estimate:
+> true` flag. Both absent unless the merchant has pricing disclosure enabled
+> with a live fee schedule.
 >
 > **v0.2 capability bump (schema unchanged).** The 0.1.0 → 0.2.0 bump signaled
 > only that the surrounding policy contract changed: VINs may declare a
@@ -50,21 +62,53 @@ See [`schemas/quote.json`](https://dmc12.ai/schemas/quote.json).
 | `created_at` | string (ISO 8601) |
 | `expires_at` | string (ISO 8601) |
 | `terms` | string (human-readable) |
-| `out_the_door` | `Money` ({amount, currency}) — **optional** |
+| `out_the_door` | `OutTheDoorEstimate` — **optional**, itemized (see below) |
 | `out_the_door_estimate` | `true` — **optional**, present iff `out_the_door` is |
 
-### Out-the-door estimate (optional, v0.3)
+### Out-the-door estimate (optional, itemized as of v0.4)
 
 When the merchant has pricing disclosure enabled and a live fee schedule for
-the VIN's store, the quote output MAY carry an `out_the_door` `Money` value
-plus `out_the_door_estimate: true`. This is a **best-effort, non-binding
-estimate** derived from `quoted_price` plus the merchant's published fee
-schedule (tax + doc + title + registration) — it is *not* a second firm price.
-`quoted_price` remains the only committed figure. Both fields are **omitted**
-when pricing disclosure is off (the Mark Miller reference deployment's current
-state) or when the fee schedule is missing/malformed; their absence is valid
-under the v0.3 schema. For the itemized line-item breakdown, see
-`ai.dmc12.automotive.pricing_disclosure`.
+the VIN's store, the quote output MAY carry an `out_the_door` object plus
+`out_the_door_estimate: true`. This is a **best-effort, non-binding estimate**
+derived from `quoted_price` plus the merchant's published fee schedule — it is
+*not* a second firm price. `quoted_price` remains the only committed figure.
+Both fields are **omitted** when pricing disclosure is off (the Mark Miller
+reference deployment toggles this per dealer) or when the fee schedule is
+missing/malformed; their absence is valid under the schema.
+
+As of v0.4 the estimate is **itemized** — it carries the same line-item
+breakdown as `ai.dmc12.automotive.pricing_disclosure`, flattened so the OTD
+total sits at the top level:
+
+#### `out_the_door` object (`OutTheDoorEstimate`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `amount` | number | yes | OTD total = sum of every `price_lines` amount (vehicle price + fees + taxes) |
+| `currency` | string (ISO 4217) | yes | e.g. `USD` |
+| `price_lines` | `PriceLine[]` | yes | Itemized lines bridging `quoted_price` → `amount` (see sub-table) |
+| `fees_total` | `Money` | yes | Sum of dealer-payee, non-vehicle fee lines (e.g. the doc fee) |
+| `taxes_total` | `Money` | yes | Sum of all `tax`-kind lines |
+| `estimate` | `true` | yes | Always `true` — the OTD is non-binding |
+| `jurisdiction` | string | yes | Tax jurisdiction, `^[A-Z]{2}-[A-Z0-9]+$` (e.g. `US-UT`) |
+| `as_of` | string (ISO 8601) | yes | When the estimate was composed |
+| `disclosure_form_url` | string (URI) | no | Link to the jurisdiction's official OTD disclosure form |
+
+`subtotal` is intentionally **omitted** — derivable as `amount - taxes_total.amount`.
+
+#### `PriceLine` (one per item in `price_lines`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `label` | string (≤80) | yes | Human-readable line label, e.g. "Documentation fee" |
+| `kind` | `FeeKind` | yes | One of `vehicle_price`, `tax`, `title`, `registration`, `doc`, `addon`, `transport`, `rebate`, `discount`, `trade_credit`, `down_payment`, `lien_payoff`, `interest`. **Not** the free-form string `"fee"` |
+| `payee` | `FeePayee` | yes | One of `government`, `dealer`, `manufacturer`, `third_party` |
+| `amount` | `Money` | yes | `{amount, currency}` for this line |
+| `statutory_basis` | string | no | Legal basis for a tax/government line, e.g. "Utah motor-vehicle sales tax" |
+| `negotiable` | boolean | no | Defaults `false`; the vehicle line tracks the deployment's negotiation toggle |
+
+For the standalone, full disclosure (including `subtotal` and optional
+`trade_in_credit`), call `ai.dmc12.automotive.pricing_disclosure`.
 
 ## TTL
 

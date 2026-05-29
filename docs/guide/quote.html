@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Quotes — DMC-12 vendor integration guide</title>
-<meta name="description" content="request_quote in DMC-12: a 30-minute quote at the listed asking price (no negotiation), plus the optional non-binding out-the-door estimate, live now that pricing disclosure is enabled." />
+<meta name="description" content="request_quote in DMC-12: a 30-minute quote at the listed asking price (no negotiation), plus the optional non-binding, itemized out-the-door estimate (price_lines + fee/tax totals), live now that pricing disclosure is enabled." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>DMC-12 v0.4 · 10 tools</span>
+      <span>DMC-12 v0.5 · 10 tools</span>
     </div>
   </div>
 </div>
@@ -49,7 +49,8 @@
       One tool: <span class="mono">request_quote</span>, scope
       <span class="scope-pill write"><span class="pip"></span>quote:write</span>. It issues a 30-minute price quote
       for a VIN at the listed asking price and returns a <code>quote_id</code> you feed into
-      <a href="reservation.html">create_reservation</a>.
+      <a href="reservation.html">create_reservation</a>. Field conventions (VIN, Money, timestamps, enums) are in
+      <a href="index.html#data-formats">Data formats</a>.
     </p>
 
     <div class="callout warn">
@@ -94,43 +95,104 @@
     "terms": "Quote valid for 30 minutes at the listed asking price. No negotiation. …",
 
     "out_the_door": {
+      "amount": 34632.0,
+      "currency": "USD",
       "price_lines": [
         { "label": "Vehicle price", "kind": "vehicle_price", "payee": "dealer",
           "amount": { "amount": 34187.0, "currency": "USD" }, "negotiable": false },
-        { "label": "Documentation fee", "kind": "fee", "payee": "dealer",
-          "amount": { "amount": 445.0, "currency": "USD" }, "negotiable": false }
+        { "label": "Documentation fee", "kind": "doc", "payee": "dealer",
+          "amount": { "amount": 445.0, "currency": "USD" }, "negotiable": false },
+        { "label": "Title fee", "kind": "title", "payee": "government",
+          "amount": { "amount": 0.0, "currency": "USD" } },
+        { "label": "Registration fee", "kind": "registration", "payee": "government",
+          "amount": { "amount": 0.0, "currency": "USD" } },
+        { "label": "Utah sales tax", "kind": "tax", "payee": "government",
+          "amount": { "amount": 0.0, "currency": "USD" },
+          "statutory_basis": "Utah motor-vehicle sales tax" }
       ],
-      "subtotal":    { "amount": 34632.0, "currency": "USD" },
-      "taxes_total": { "amount": 0.0,     "currency": "USD" },
-      "fees_total":  { "amount": 445.0,   "currency": "USD" },
-      "out_the_door":{ "amount": 34632.0, "currency": "USD" },
-      "as_of": "2026-05-27T18:04:11+00:00",
-      "jurisdiction": "US-UT",
+      "fees_total":  { "amount": 445.0, "currency": "USD" },
+      "taxes_total": { "amount": 0.0,   "currency": "USD" },
       "estimate": true,
+      "jurisdiction": "US-UT",
+      "as_of": "2026-05-27T18:04:11+00:00",
       "disclosure_form_url": "https://dmv.utah.gov/…/mved-tx-disclosure-form.pdf"
     },
     "out_the_door_estimate": true
 } }</pre>
     </div>
 
+    <h2>Response fields</h2>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">quote_id</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>Opaque quote handle. Feed it to <code>create_reservation</code>. Treat as a black box — do not parse.</td></tr>
+        <tr><td class="fname">vin</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>The quoted VIN, echoed back. 17 chars, <code>^[A-HJ-NPR-Z0-9]{17}$</code>.</td></tr>
+        <tr><td class="fname">quoted_price</td><td class="ftype">number</td><td><span class="badge badge-plain">always</span></td><td>The firm headline price — always exactly the listed <code>asking_price</code>. The only committed figure.</td></tr>
+        <tr><td class="fname">currency</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>ISO-4217, <code>^[A-Z]{3}$</code> — <code>USD</code> at MM.</td></tr>
+        <tr><td class="fname">created_at</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>ISO-8601 UTC timestamp the quote was issued.</td></tr>
+        <tr><td class="fname">expires_at</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>ISO-8601 UTC — 30 minutes after <code>created_at</code>. After this the quote is <code>expired</code> and cannot be reserved.</td></tr>
+        <tr><td class="fname">terms</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Human-readable terms string. Not in the schema's <code>output.required</code> set (always sent by MM, but treat as optional).</td></tr>
+        <tr><td class="fname">out_the_door</td><td class="ftype">object</td><td><span class="badge badge-opt">optional</span></td><td>Itemized, non-binding OTD estimate. Present only when pricing disclosure is on with a live fee schedule. See the table below.</td></tr>
+        <tr><td class="fname">out_the_door_estimate</td><td class="ftype">true</td><td><span class="badge badge-opt">optional</span></td><td>Present (and always <code>true</code>) iff <code>out_the_door</code> is present. The pair travels together.</td></tr>
+      </tbody>
+    </table>
+
     <h2>The out-the-door estimate</h2>
     <p>
       Pricing disclosure is <strong>live on MM's deployment</strong> (the <code>pricing:read</code> scope is
       advertised). When the dealer has a published fee schedule for the store + jurisdiction, the quote response
       carries an additional <code>out_the_door</code> object and an <code>out_the_door_estimate: true</code> flag.
-      It is the same structure the standalone <span class="mono">get_pricing_disclosure</span> tool returns.
+      It is the same breakdown the standalone <span class="mono">get_pricing_disclosure</span> tool returns,
+      flattened so the OTD total sits at the top of the object.
     </p>
     <ul class="prose">
       <li><strong>Non-binding.</strong> <code>estimate</code> is always <code>true</code>. The firm headline number remains <code>quoted_price</code>; the OTD is an itemized projection.</li>
       <li><strong>Best-effort.</strong> If the fee schedule is missing or malformed, the quote still succeeds — the <code>out_the_door</code> block is simply omitted. Never assume it is present; branch on its existence.</li>
-      <li><strong>Itemized.</strong> <code>price_lines</code> tag each line with a <code>kind</code> (<code>vehicle_price</code> | <code>fee</code> | <code>tax</code> | <code>addon</code>) and a <code>payee</code> (<code>dealer</code> | <code>government</code>). <code>taxes_total</code> sums the <code>tax</code> lines; <code>fees_total</code> sums dealer non-vehicle lines.</li>
+      <li><strong>Itemized.</strong> <code>price_lines</code> tag each line with a <code>kind</code> (<code>vehicle_price</code> | <code>doc</code> | <code>title</code> | <code>registration</code> | <code>tax</code> | <code>addon</code> | …) and a <code>payee</code> (<code>dealer</code> | <code>government</code> | <code>manufacturer</code> | <code>third_party</code>). <code>taxes_total</code> sums the <code>tax</code> lines; <code>fees_total</code> sums dealer non-vehicle lines.</li>
+      <li><strong>No <code>subtotal</code>.</strong> The inline OTD omits it — derive it as <code>amount − taxes_total.amount</code> if you need it. (The standalone <code>get_pricing_disclosure</code> response still carries <code>subtotal</code>.)</li>
       <li><strong>Jurisdiction</strong> is <code>US-UT</code>. The MM doc fee is <code>$445</code>; sales tax, title, and registration currently itemize at <code>$0.00</code> on this deployment.</li>
     </ul>
+
+    <h3>The <code>out_the_door</code> object</h3>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">amount</td><td class="ftype">number</td><td><span class="badge badge-req">required</span></td><td>The OTD total = sum of every <code>price_lines</code> amount (vehicle price + fees + taxes). Sits where the old bare total used to.</td></tr>
+        <tr><td class="fname">currency</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td>ISO-4217, <code>^[A-Z]{3}$</code>.</td></tr>
+        <tr><td class="fname">price_lines</td><td class="ftype">PriceLine[]</td><td><span class="badge badge-req">required</span></td><td>The itemized lines bridging <code>quoted_price</code> → <code>amount</code>. See the PriceLine table below.</td></tr>
+        <tr><td class="fname">fees_total</td><td class="ftype">Money</td><td><span class="badge badge-req">required</span></td><td>Sum of dealer-payee, non-vehicle fee lines (the doc fee at MM).</td></tr>
+        <tr><td class="fname">taxes_total</td><td class="ftype">Money</td><td><span class="badge badge-req">required</span></td><td>Sum of all <code>tax</code>-kind lines ($0 at MM today).</td></tr>
+        <tr><td class="fname">estimate</td><td class="ftype">true</td><td><span class="badge badge-req">required</span></td><td>Always <code>true</code> — the OTD is non-binding.</td></tr>
+        <tr><td class="fname">jurisdiction</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td>Tax jurisdiction, <code>^[A-Z]{2}-[A-Z0-9]+$</code> — <code>US-UT</code> at MM.</td></tr>
+        <tr><td class="fname">as_of</td><td class="ftype">string</td><td><span class="badge badge-req">required</span></td><td>ISO-8601 UTC — when the estimate was composed (fee schedule + tax rate in effect at this instant).</td></tr>
+        <tr><td class="fname">disclosure_form_url</td><td class="ftype">string (URI)</td><td><span class="badge badge-opt">optional</span></td><td>Link to the jurisdiction's official OTD disclosure form, when published.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>PriceLine</h3>
+    <p class="prose">One per item in <code>price_lines</code>. Shared with <code>get_pricing_disclosure</code> and the negotiation schemas (<code>common.json#/$defs/PriceLine</code>).</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">label</td><td class="ftype">string (≤80)</td><td><span class="badge badge-req">required</span></td><td>Human-readable line label, e.g. "Documentation fee".</td></tr>
+        <tr><td class="fname">kind</td><td class="ftype">FeeKind</td><td><span class="badge badge-req">required</span></td><td>One of <code>vehicle_price</code>, <code>tax</code>, <code>title</code>, <code>registration</code>, <code>doc</code>, <code>addon</code>, <code>transport</code>, <code>rebate</code>, <code>discount</code>, <code>trade_credit</code>, <code>down_payment</code>, <code>lien_payoff</code>, <code>interest</code>. <strong>Never</strong> the free-form string <code>"fee"</code>.</td></tr>
+        <tr><td class="fname">payee</td><td class="ftype">FeePayee</td><td><span class="badge badge-req">required</span></td><td>One of <code>government</code>, <code>dealer</code>, <code>manufacturer</code>, <code>third_party</code>.</td></tr>
+        <tr><td class="fname">amount</td><td class="ftype">Money</td><td><span class="badge badge-req">required</span></td><td><code>{ amount, currency }</code> for this single line.</td></tr>
+        <tr><td class="fname">statutory_basis</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Legal basis for a tax/government line, e.g. "Utah motor-vehicle sales tax".</td></tr>
+        <tr><td class="fname">negotiable</td><td class="ftype">boolean</td><td><span class="badge badge-opt">optional</span></td><td>Defaults <code>false</code>. The vehicle line tracks the deployment's negotiation toggle (off at MM, so <code>false</code>).</td></tr>
+      </tbody>
+    </table>
+
     <div class="callout">
       <span class="ttl">Want OTD without a quote?</span>
       Call <span class="mono">get_pricing_disclosure(vin)</span> (scope <code>pricing:read</code>, public-rail
-      callable, no PII, no DB write) at the search / triage step. It returns the same <code>out_the_door</code>
-      object standalone — useful before the buyer commits to a quote.
+      callable, no PII, no DB write) at the search / triage step — useful before the buyer commits to a quote.
+      It returns the same <strong>line items</strong> (`price_lines`) and totals, but in the <em>full disclosure</em>
+      shape, <strong>not</strong> this flattened <code>out_the_door</code> object: there, <code>price_lines</code>,
+      <code>subtotal</code>, <code>fees_total</code>, <code>taxes_total</code>, and the OTD total
+      (<code>out_the_door</code>, a bare <code>Money</code>) all sit at the top level. The quote's inline
+      <code>out_the_door</code> is the flattened <code>OutTheDoorEstimate</code> above (total promoted, no
+      <code>subtotal</code>).
     </div>
 
     <h2>Lifecycle</h2>

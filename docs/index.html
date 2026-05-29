@@ -726,7 +726,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>spec 2026-05-26 · DMC-12 v0.4</span>
+      <span>spec 2026-05-29 · DMC-12 v0.5</span>
       <span class="sep">·</span>
       <span>UCP v1</span>
     </div>
@@ -862,7 +862,7 @@
       <div class="tool write">
         <div class="scope"><span class="pip"></span>quote:write</div>
         <div class="name">request_quote</div>
-        <div class="desc">Issue a 30-minute quote at the listed asking price. No parameter accepts a proposed price. Carries an optional non-binding out-the-door estimate from pricing disclosure, live at MM.</div>
+        <div class="desc">Issue a 30-minute quote at the listed asking price. No parameter accepts a proposed price. Carries an optional non-binding, itemized out-the-door estimate — vehicle price + doc fee + title + registration + tax line items, plus fee/tax totals — sourced from pricing disclosure, live at MM.</div>
       </div>
       <div class="tool write">
         <div class="scope"><span class="pip"></span>reservation:write</div>
@@ -1008,7 +1008,7 @@
       <div class="verify-row">
         <div class="what">
           UCP manifest
-          <span class="hint">UCP v1 — merchant, capabilities (<span class="mono">ai.dmc12.automotive.*</span>, v0.4), freshness SLA</span>
+          <span class="hint">UCP v1 — merchant, capabilities (<span class="mono">ai.dmc12.automotive.*</span>, v0.5), freshness SLA</span>
         </div>
         <a class="url" data-mcp-path="/.well-known/ucp" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/ucp
@@ -1079,8 +1079,17 @@
     <div class="release-list">
       <div class="verify-row">
         <div class="what">
+          <span class="ver">v0.5.0</span>
+          <span class="hint">2026-05-29 · current release</span>
+        </div>
+        <div class="summary">
+          The optional <span class="mono">out_the_door</span> estimate on the <span class="mono">request_quote</span> output is now <strong>itemized</strong> — it changes from a bare total to an <span class="mono">OutTheDoorEstimate</span> (new in <span class="mono">common.json</span> 0.2.0) carrying <span class="mono">price_lines</span> (vehicle price + each fee/tax line), <span class="mono">fees_total</span>, <span class="mono">taxes_total</span>, and disclosure metadata (capability <span class="mono">quote</span> → 0.4.0). <span class="mono">subtotal</span> is omitted (derivable). No new tools, scopes, or fee-math change. Additive for payloads that omit the OTD; for payloads that carried it the field's shape changes (a breaking change to that one optional field, but <strong>field-access compatible</strong> — <span class="mono">amount</span>/<span class="mono">currency</span> stay at the top level).
+        </div>
+      </div>
+      <div class="verify-row">
+        <div class="what">
           <span class="ver">v0.4.0</span>
-          <span class="hint">2026-05-26 · current release</span>
+          <span class="hint">2026-05-26</span>
         </div>
         <div class="summary">
           Additive, non-breaking. <span class="mono">search_inventory</span> ergonomics — optional natural-language query (omit it for a structured filter+sort), agent-controlled <span class="mono">sort_by</span> / <span class="mono">sort_order</span>, and a <span class="mono">min_price</span> floor (capability <span class="mono">inventory</span> → 0.2.0); a <span class="mono">min_year</span> / <span class="mono">max_year</span> range on <span class="mono">list_inventory</span>; and an optional, non-binding <span class="mono">out_the_door</span> estimate on the <span class="mono">request_quote</span> output (capability <span class="mono">quote</span> → 0.3.0), sourced from pricing disclosure (live at MM). No new tools.

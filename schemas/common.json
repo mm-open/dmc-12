@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dmc12.ai/schemas/common.json",
-  "title": "DMC-12 Common Definitions v0.1.0",
-  "description": "Shared $defs (Money, FeePayee, FeeKind, PriceLine, FeeRule, NegotiationState, RejectionReason) referenced by negotiation and pricing-disclosure schemas.",
+  "title": "DMC-12 Common Definitions v0.2.0",
+  "description": "Shared $defs (Money, FeePayee, FeeKind, PriceLine, FeeRule, OutTheDoorEstimate, NegotiationState, RejectionReason) referenced by quote, negotiation, and pricing-disclosure schemas. v0.2.0 adds OutTheDoorEstimate — the itemized out-the-door object carried on quote output (v0.5 cut).",
   "$defs": {
     "Money": {
       "type": "object",
@@ -64,6 +64,33 @@
         },
         "statutory_basis": {"type": "string"},
         "negotiable":      {"type": "boolean", "default": false}
+      }
+    },
+    "OutTheDoorEstimate": {
+      "description": "Itemized, non-binding out-the-door estimate carried on quote output (v0.5). Flattens the standalone pricing_disclosure shape: the OTD total is promoted to top-level amount/currency, and the itemized price_lines + fees_total/taxes_total + disclosure metadata are carried alongside. subtotal is intentionally omitted — it is derivable as amount - taxes_total.amount. estimate is always true; quoted_price (on the quote, not here) remains the only committed figure.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency", "price_lines", "fees_total",
+                   "taxes_total", "estimate", "jurisdiction", "as_of"],
+      "properties": {
+        "amount":              {"type": "number", "minimum": 0,
+                                "description": "The out-the-door total (vehicle price + fees + taxes). Equals the sum of every price_lines amount."},
+        "currency":            {"type": "string", "pattern": "^[A-Z]{3}$"},
+        "price_lines":         {"type": "array",
+                                "items": {"$ref": "#/$defs/PriceLine"},
+                                "description": "Itemized line items bridging quoted_price to amount: the vehicle_price line plus each fee/tax PriceLine."},
+        "fees_total":          {"$ref": "#/$defs/Money",
+                                "description": "Sum of dealer-payee, non-vehicle fee lines (e.g. the doc fee)."},
+        "taxes_total":         {"$ref": "#/$defs/Money",
+                                "description": "Sum of all tax-kind lines."},
+        "estimate":            {"const": true,
+                                "description": "Always true. The OTD is non-binding; only quoted_price is committed."},
+        "jurisdiction":        {"type": "string", "pattern": "^[A-Z]{2}-[A-Z0-9]+$",
+                                "description": "Tax jurisdiction the estimate was computed for (e.g. US-UT)."},
+        "as_of":               {"type": "string", "format": "date-time",
+                                "description": "When the estimate was composed (the fee schedule + tax rate in effect at this instant)."},
+        "disclosure_form_url": {"type": "string", "format": "uri",
+                                "description": "Optional link to the jurisdiction's official OTD disclosure form."}
       }
     },
     "NegotiationState": {
