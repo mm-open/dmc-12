@@ -1,7 +1,7 @@
 # DMC-12 Specification
 
-**Version:** 0.4.0
-**Date:** 2026-05-26
+**Version:** 0.5.0
+**Date:** 2026-05-29
 **Status:** Reference implementation at Mark Miller Subaru Midtown.
 
 DMC-12 is an automotive extension set to the
@@ -19,7 +19,10 @@ Protocol (AAP); see §13. v0.4 adds three more additive, non-breaking
 refinements — `search_inventory` ergonomics (optional `query`,
 agent-controlled `sort_by`/`sort_order`, a `min_price` floor),
 `list_inventory` year-range filters, and an OPTIONAL out-the-door
-estimate on the `quote` output; see §14. It also stubs the automotive-specific
+estimate on the `quote` output; see §14. v0.5 makes that out-the-door
+estimate **itemized** — the `quote` output's `out_the_door` field carries the
+full `price_lines` + fee/tax totals + disclosure metadata
+(`OutTheDoorEstimate`), not just a bare total; see §15. It also stubs the automotive-specific
 capabilities (trade intake, test-drive, F&I menu, return policy) that
 require DMS writes to implement but can be declared on a manifest as
 capabilities are brought online.
@@ -48,7 +51,7 @@ DMC-12 capabilities extend two UCP core capabilities:
 | UCP core | DMC-12 extension (status) | Relationship |
 |---|---|---|
 | `dev.ucp.shopping.catalog` | `ai.dmc12.automotive.inventory` *(implemented; capability v0.2.0 at the v0.4 cut)* | Adds VIN, stock #, condition, mileage, drivetrain, body_style, days_on_lot. v0.2.0 adds additive search/list ergonomics (optional `query`, `sort_by`/`sort_order`, `min_price`, `min_year`/`max_year`); the vehicle record is unchanged. See §14. |
-| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented; `.quote` at capability v0.3.0 adds an optional OTD estimate on output; `.deal_handoff` at v0.1.2 adds optional structured `trade_in` and optional channel-scoped `consent`)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
+| `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.quote` + `.reservation` + `.deal_handoff` *(all implemented; `.quote` at capability v0.4.0 carries an optional itemized OTD estimate (`OutTheDoorEstimate`) on output; `.deal_handoff` at v0.1.2 adds optional structured `trade_in` and optional channel-scoped `consent`)* | Automotive checkout is a human-closes-the-deal flow — the reservation + handoff pair replaces direct payment capture in v0.1. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.negotiation` + `.pricing_disclosure` *(implemented v0.2)* | Negotiation publishes per-VIN policy types (`fixed` / `stepwise` / `bestoffer`) and offer/counter/acceptance/rejection envelopes. Pricing disclosure publishes itemized price lines with `kind` × `payee` tagging plus an OTD estimate. |
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.trade_intake` *(stub — v0.3+)* | Trade-in intake also extends checkout. Schema is published as a stub so it shows up in capability indexing; `additionalProperties: false` prevents accidental PII leakage through an undefined surface. |
 | *(none — new namespace)* | `ai.dmc12.automotive.test_drive` + `.fni_menu` + `.return_policy` *(stub — v0.3+)* | Out-of-band from UCP checkout; they describe the retail wrapper around the vehicle sale rather than the transaction itself. |
@@ -152,6 +155,13 @@ Integer miles. Implementations SHOULD return `null` for new vehicles
   add-ons). v0.2 introduces
   `ai.dmc12.automotive.pricing_disclosure` as the itemized line-item
   schema (replacing v0.1's `otd_pricing` stub).
+- As of v0.5 the `quote` output also carries this itemized breakdown inline:
+  its OPTIONAL `out_the_door` field is an `OutTheDoorEstimate` (the disclosure
+  shape flattened — total promoted to top-level `amount`/`currency`, with
+  `price_lines` + `fees_total`/`taxes_total` + metadata alongside), so an agent
+  gets the bridge from `quoted_price` to the OTD total without a second call.
+  See §15. `get_pricing_disclosure` remains the standalone, `subtotal`-bearing
+  source of truth.
 
 ## 5. Inventory Accuracy Declaration
 
@@ -283,7 +293,28 @@ Lake City, UT:
 
 ## 11. Release Notes
 
-### v0.4.0 — current release (2026-05-26)
+### v0.5.0 — current release (2026-05-29)
+
+v0.5 promotes the v0.4 OTD-on-quote estimate from a bare total to a fully
+**itemized** object, carrying through the breakdown the reference
+implementation already computes. It is additive for payloads that omit
+`out_the_door`; for payloads that carried it, the field's shape changes (a
+breaking change to that one optional field, permitted pre-1.0 — see §15
+Compatibility, field-access preserved). Full detail in §15. In brief:
+
+- **`ai.dmc12.automotive.quote` → capability v0.4.0** — the quote output's
+  OPTIONAL `out_the_door` field changes from a bare `Money` total to an
+  `OutTheDoorEstimate` (new in `common.json` v0.2.0). It carries `price_lines`
+  (vehicle price + each fee/tax line), `fees_total`, `taxes_total`, and
+  disclosure metadata (`estimate`, `jurisdiction`, `as_of`,
+  `disclosure_form_url`) alongside the OTD `amount`/`currency`. `subtotal` is
+  omitted (derivable as `amount - taxes_total.amount`). The `out_the_door_estimate:
+  true` pairing and the field's optionality are unchanged, so a v0.1–v0.4 quote
+  payload (no OTD) still validates.
+
+No new tools, no new scopes, no namespace change, no fee-math change.
+
+### v0.4.0 (2026-05-26)
 
 v0.4 is an additive, non-breaking feature cut that reconciles the published
 spec with search/list ergonomics and OTD-on-quote groundwork already running
@@ -424,3 +455,55 @@ live fee schedule, and are **omitted** otherwise (the Mark Miller reference
 deployment runs with disclosure off, so it emits neither today). Their absence
 is valid under the v0.3 quote schema. For the itemized line-item breakdown, see
 `ai.dmc12.automotive.pricing_disclosure`.
+
+> **Superseded in v0.5.** The bare-`Money` `out_the_door` described here was
+> itemized in v0.5 — the field is now an `OutTheDoorEstimate`. See §15.4.
+
+## 15. v0.5 Additions
+
+v0.5 carries the itemized OTD breakdown the reference implementation already
+computes (in `compose_disclosure`) onto the `quote` output, so an agent gets the
+line items bridging `quoted_price` to the OTD total inline — no second
+`get_pricing_disclosure` call required.
+
+**Compatibility.** The `out_the_door` field stays OPTIONAL, so any quote payload
+that **omits** it (every v0.1–v0.4 payload that didn't carry an OTD, including
+MM's until 2026-05-27) still validates unchanged. For payloads that **did**
+carry the OTD, the field's *shape* changed — `$ref` `Money` →
+`OutTheDoorEstimate` — so the old bare-`{amount, currency}` total no longer
+validates against the v0.5 `quote` schema. That is a breaking change to that one
+optional field, permitted under the pre-1.0 SemVer policy (§9). It is
+deliberately **field-access compatible**: `amount`/`currency` remain at the top
+level of `OutTheDoorEstimate`, exactly where the bare `Money` total sat, so a
+consumer that only read `out_the_door.amount` is unaffected (see §15.4).
+
+### 15.1 New shared def: `OutTheDoorEstimate` (`common.json` → 0.2.0)
+
+`common.json` gains an `OutTheDoorEstimate` `$def` composed from the existing
+`PriceLine` / `Money` primitives — no new primitives. It is the standalone
+`pricing_disclosure` shape **flattened**: the OTD total is promoted to
+top-level `amount`/`currency`, and `price_lines` + `fees_total` /
+`taxes_total` + `estimate` / `jurisdiction` / `as_of` /
+`disclosure_form_url` (optional) are carried alongside. `subtotal` is omitted —
+derivable as `amount - taxes_total.amount`. `estimate` is `const: true`.
+
+### 15.2 `quote` output `out_the_door` is now itemized (`quote` → 0.4.0)
+
+The `request_quote` output's OPTIONAL `out_the_door` field changes its `$ref`
+from `common.json#/$defs/Money` to `common.json#/$defs/OutTheDoorEstimate`. The
+`out_the_door_estimate: true` pairing (`dependentRequired` in both directions)
+is unchanged. Presence rules are unchanged: emitted only when the merchant has
+pricing disclosure enabled with a live fee schedule, omitted otherwise.
+
+### 15.3 No fee-math, scope, or tool change
+
+The itemization is a pure carry-through of data `compose_disclosure` already
+produces. No new tools, no new OAuth scopes, no namespace change. `quoted_price`
+remains the only committed figure; the OTD is always a non-binding estimate.
+
+### 15.4 Relationship to §14.4
+
+§14.4 (v0.4) introduced `out_the_door` as a bare `Money` total. v0.5 itemizes
+it. An agent that only read the total continues to work — `amount`/`currency`
+sit at the top level of `OutTheDoorEstimate` exactly where the bare `Money`
+total used to be.

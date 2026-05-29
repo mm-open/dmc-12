@@ -23,7 +23,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>DMC-12 v0.4 · 10 tools</span>
+      <span>DMC-12 v0.5 · 10 tools</span>
     </div>
   </div>
 </div>
@@ -54,7 +54,7 @@
 
     <div class="callout">
       <span class="ttl">What's live right now</span>
-      DMC-12 <strong>v0.4.0</strong> · <strong>10 tools</strong> on MM's deployment (negotiation is defined in the
+      DMC-12 <strong>v0.5.0</strong> · <strong>10 tools</strong> on MM's deployment (negotiation is defined in the
       spec but off here — every quote is at asking price). Five scopes:
       <code>inventory:read</code>, <code>quote:write</code>, <code>reservation:write</code>,
       <code>deal:handoff</code>, <code>pricing:read</code>.
@@ -93,6 +93,14 @@
 
     <h2>2. Pick a rail: A2A or MCP</h2>
     <p>The same DMC-12 capabilities are served over two wires from one Cloud Run service. Choose by who your caller is.</p>
+    <div class="callout">
+      <span class="ttl">Base URL</span>
+      Every path on this page is relative to the live MM service base
+      <code>MCP_BASE = https://mm-inventory-mcp-572952183767.us-central1.run.app</code>.
+      A2A calls go to <code>MCP_BASE/a2a/</code>, MCP to <code>MCP_BASE/mcp/</code>, and the
+      well-knowns to <code>MCP_BASE/.well-known/…</code>. (Prefer discovering the endpoint from the
+      dealer's published <code>/.well-known/ucp</code> rather than hard-coding it.)
+    </div>
     <table class="field-table">
       <thead><tr><th>Rail</th><th>Transport</th><th>Who</th><th>Surface</th></tr></thead>
       <tbody>
@@ -167,7 +175,7 @@
       <a class="url" data-mcp-path="/.well-known/mcp" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/mcp</a>
     </div>
     <div class="verify-row">
-      <div class="what">UCP manifest <span class="hint">UCP v1 — merchant, <span class="mono">ai.dmc12.automotive</span> v0.4, freshness</span></div>
+      <div class="what">UCP manifest <span class="hint">UCP v1 — merchant, <span class="mono">ai.dmc12.automotive</span> v0.5, freshness</span></div>
       <a class="url" data-mcp-path="/.well-known/ucp" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/ucp</a>
     </div>
     <div class="verify-row">
@@ -179,6 +187,18 @@
       <a class="url" data-mcp-path="/.well-known/jwks.json" data-mcp-role="href" target="_blank" rel="noopener">/.well-known/jwks.json</a>
     </div>
 
+    <p style="margin-top:16px;">What each one returns, in brief:</p>
+    <table class="field-table">
+      <thead><tr><th>Well-known</th><th>Returns</th><th>Shape (abridged)</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">agent-card.json</td><td>A2A v1.0 Agent Card — display name, protocols, policies, the scope-filtered <code>tools</code> array, and <code>authentication</code> (issuer / audience / scopes). JWS-signed when signing is configured.</td><td class="fconstraint">{ schema_version, name, description, protocols:["a2a"], endpoints, tools:[…], authentication:{ type:"oauth2_client_credentials", issuer, audience, scopes:[…] } }</td></tr>
+        <tr><td class="fname">mcp</td><td>SEP-1960 MCP Server Card — endpoint, transports, auth methods (OAuth + legacy shared-key), and the public/partner scope split.</td><td class="fconstraint">{ mcpVersion:"2025-11-25", name, endpoints:{ http }, transports:["streamable-http"], auth:{ sharedKey, oauth2 }, scopes:{ public:[…], partner:[…] } }</td></tr>
+        <tr><td class="fname">ucp</td><td>UCP v1 manifest — merchant, capability list (<code>ai.dmc12.automotive.*</code> with versions + schema URLs), policies, and inventory freshness SLA.</td><td class="fconstraint">{ ucp:{ version, services, capabilities:[{ name, version, spec, schema }] }, merchant:{…}, policies:{…} }</td></tr>
+        <tr><td class="fname">oauth-protected-resource</td><td>RFC 9728 metadata — the <code>resource</code> identifier (must match token <code>aud</code>), <code>scopes_supported</code>, and the authorization server.</td><td class="fconstraint">{ resource, authorization_servers:[…], scopes_supported:[…], bearer_methods_supported:["header"] }</td></tr>
+        <tr><td class="fname">jwks.json</td><td>The public JWK set used to verify the Agent Card's JWS signature (not the IdP's JWKS).</td><td class="fconstraint">{ keys:[{ kty, kid, use:"sig", alg:"RS256", n, e }] }</td></tr>
+      </tbody>
+    </table>
+
     <h2>4. Auth, in one paragraph</h2>
     <p>
       Partners authenticate with OAuth 2.1 <strong>client-credentials</strong> against Auth0 tenant
@@ -189,6 +209,27 @@
       <a href="onboarding.html">Partner onboarding</a> for the full credential bundle, the mint command, rate
       limits, and the scope matrix.
     </p>
+
+    <h2 id="data-formats">5. Data formats</h2>
+    <p>
+      Every DMC-12 field follows one of these conventions. The per-capability pages
+      (<a href="inventory.html">Inventory</a>, <a href="quote.html">Quotes</a>,
+      <a href="reservation.html">Reservations</a>, <a href="deal-handoff.html">Deal hand-off</a>) link back here
+      rather than restating them. All enum values are <strong>lower-case and case-sensitive</strong> —
+      <code>available</code>, not <code>Available</code>.
+    </p>
+    <table class="field-table">
+      <thead><tr><th>Format</th><th>Rule</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">VIN</td><td>17 chars, <code>^[A-HJ-NPR-Z0-9]{17}$</code> — upper-case; letters <code>I</code>, <code>O</code>, <code>Q</code> are excluded (they look like 1 / 0).</td><td class="fconstraint">4S4BTGUD8R3201234</td></tr>
+        <tr><td class="fname">Money</td><td><code>{ "amount": number, "currency": string }</code> — <code>amount</code> is a decimal in major units (dollars, 2-dp cents), <code>currency</code> is ISO-4217 <code>^[A-Z]{3}$</code>. Never a bare number.</td><td class="fconstraint">{ "amount": 445.0, "currency": "USD" }</td></tr>
+        <tr><td class="fname">Timestamp</td><td>ISO-8601, UTC — either a trailing <code>Z</code> or <code>+00:00</code>. Always UTC, never a local offset.</td><td class="fconstraint">2026-05-27T18:04:11+00:00</td></tr>
+        <tr><td class="fname">Phone</td><td>E.164 — <code>+</code>, country code, national number, no spaces or punctuation (deal hand-off only).</td><td class="fconstraint">+18015551234</td></tr>
+        <tr><td class="fname">Email</td><td>Standard RFC-5322 address (deal hand-off only).</td><td class="fconstraint">buyer@example.com</td></tr>
+        <tr><td class="fname">Enums</td><td>Lower-case, case-sensitive — status values, <code>kind</code>, <code>payee</code>, sort fields, error codes' lower portions. Send and compare exactly.</td><td class="fconstraint">available · vehicle_price · government</td></tr>
+        <tr><td class="fname">Opaque tokens</td><td><code>quote_id</code>, <code>reservation_token</code>, <code>handoff_token</code> are opaque strings — treat as black boxes; never parse or construct them.</td><td class="fconstraint">qte_8f1c… · rsv_… · hnd_…</td></tr>
+      </tbody>
+    </table>
 
     <div class="callout warn">
       <span class="ttl">Negotiation is off at MM</span>

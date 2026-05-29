@@ -23,7 +23,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>DMC-12 v0.4 · 10 tools</span>
+      <span>DMC-12 v0.5 · 10 tools</span>
     </div>
   </div>
 </div>
@@ -55,6 +55,7 @@
       <span class="ttl">VIN format</span>
       Wherever a VIN is accepted it must match <code>^[A-HJ-NPR-Z0-9]{17}$</code> — 17 alphanumeric characters,
       ISO 3779 (the letters I, O, Q are excluded). VINs are upper-cased and trimmed server-side.
+      See <a href="index.html#data-formats">Data formats</a> for VIN, Money, timestamp, and enum conventions used across every tool.
     </div>
 
     <!-- ============================ search ============================ -->
@@ -120,6 +121,38 @@
 }</pre>
     </div>
     <p><code>similarity</code> is present only on the relevance path (cosine distance, 4 dp). On the structured path it is absent.</p>
+
+    <h3>Vehicle record fields</h3>
+    <p class="prose">Every inventory tool that returns a vehicle (<code>search_inventory</code> items, <code>list_inventory</code> items, <code>get_vehicle_by_vin.vehicle</code>) uses this shape. Public fields only — never invoice, cost, hold-back, or salesperson data.</p>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="fname">vin</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>17-char VIN, <code>^[A-HJ-NPR-Z0-9]{17}$</code>. The stable key for quote / reserve / hand-off.</td></tr>
+        <tr><td class="fname">store_code</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>Which store holds the unit (e.g. <code>MMS</code> / <code>MMU</code>). Required in the schema.</td></tr>
+        <tr><td class="fname">stock_number</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Dealer stock number for the unit.</td></tr>
+        <tr><td class="fname">year</td><td class="ftype">int</td><td><span class="badge badge-plain">always</span></td><td>Model year.</td></tr>
+        <tr><td class="fname">make</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>Manufacturer, e.g. <code>Subaru</code>.</td></tr>
+        <tr><td class="fname">model</td><td class="ftype">string</td><td><span class="badge badge-plain">always</span></td><td>Model name, e.g. <code>Outback</code>.</td></tr>
+        <tr><td class="fname">trim</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Trim level, e.g. <code>Premium</code>. May be absent on sparse records.</td></tr>
+        <tr><td class="fname">condition</td><td class="ftype">enum</td><td><span class="badge badge-plain">always</span></td><td>Canonical <code>Condition</code>: <code>new</code> | <code>used</code> | <code>certified</code> | <code>rental</code> | <code>demo</code>. (The <em>input</em> filter also accepts the legacy alias <code>cpo</code> → <code>certified</code> and <code>any</code>.)</td></tr>
+        <tr><td class="fname">body_style</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Body style, e.g. <code>SUV</code> / <code>Sedan</code>.</td></tr>
+        <tr><td class="fname">exterior_color</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Marketing color name, e.g. <code>Crystal White Pearl</code>.</td></tr>
+        <tr><td class="fname">interior_color</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Interior color/trim name.</td></tr>
+        <tr><td class="fname">transmission</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Transmission type (enrichment field).</td></tr>
+        <tr><td class="fname">drivetrain</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Drivetrain, e.g. <code>AWD</code> / <code>FWD</code>.</td></tr>
+        <tr><td class="fname">fuel_type</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Fuel type, e.g. <code>Gas</code> / <code>Hybrid</code> / <code>EV</code> (enrichment field).</td></tr>
+        <tr><td class="fname">mileage</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td>Odometer miles. Near-zero on new units.</td></tr>
+        <tr><td class="fname">asking_price</td><td class="ftype">number</td><td><span class="badge badge-plain">always</span></td><td>The listed price in USD. This is what <code>request_quote</code> pins as <code>quoted_price</code>.</td></tr>
+        <tr><td class="fname">msrp</td><td class="ftype">number</td><td><span class="badge badge-opt">optional</span></td><td>Manufacturer's suggested retail price, when known.</td></tr>
+        <tr><td class="fname">status</td><td class="ftype">enum</td><td><span class="badge badge-plain">always</span></td><td><code>available</code> | <code>pending</code> | <code>sold</code> | <code>off-lot</code>. Search/list return only <code>available</code>. (The separate <code>check_availability</code> map can also report runtime states like <code>reserved</code> / <code>in_transit</code> / <code>unknown</code>.)</td></tr>
+        <tr><td class="fname">days_on_lot</td><td class="ftype">int</td><td><span class="badge badge-opt">optional</span></td><td>Days the unit has been in inventory.</td></tr>
+        <tr><td class="fname">stocked_date</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Date the unit was stocked (ISO 8601).</td></tr>
+        <tr><td class="fname">photos</td><td class="ftype">string[]</td><td><span class="badge badge-opt">optional</span></td><td>Array of image URLs; may be empty.</td></tr>
+        <tr><td class="fname">description</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Free-text marketing/description blurb.</td></tr>
+        <tr><td class="fname">similarity</td><td class="ftype">number | null</td><td><span class="badge badge-opt">optional</span></td><td>Relevance score (cosine distance, 4 dp) — present only on the <code>search_inventory</code> relevance path; <code>null</code>/absent on every structured path.</td></tr>
+      </tbody>
+    </table>
+    <p class="prose"><strong>Nullability:</strong> every <span class="badge badge-opt">optional</span> field above is typed <code>["&lt;type&gt;", "null"]</code> in <code>schemas/inventory.json</code> — it may be returned as an explicit <code>null</code>, not just omitted. Only the <span class="badge badge-plain">always</span> fields (<code>vin</code>, <code>store_code</code>, <code>condition</code>, <code>year</code>, <code>make</code>, <code>model</code>, <code>asking_price</code>, <code>status</code>) are non-null and required. Generate your client types accordingly (accept <code>null</code> for the optionals).</p>
 
     <!-- ============================ list ============================ -->
     <h2>list_inventory</h2>

@@ -23,7 +23,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>DMC-12 v0.4 · 10 tools</span>
+      <span>DMC-12 v0.5 · 10 tools</span>
     </div>
   </div>
 </div>
@@ -97,6 +97,15 @@ if (d.error_code) {
       return surfaceToOperator(d);
   }
 }</pre>
+    </div>
+
+    <div class="callout">
+      <span class="ttl">Retry strategy</span>
+      Retry <strong>only</strong> when <code>retryable === true</code> (<code>RATE_LIMITED</code>,
+      <code>UPSTREAM_UNAVAILABLE</code>, <code>INTERNAL_ERROR</code>). Use <strong>exponential backoff with
+      jitter</strong> (~1s → 2s → 4s, capped) and a <strong>hard max-attempt ceiling</strong> (3–5); after that,
+      surface to an operator with the <code>error_id</code> + <code>trace_id</code>. Everything else is terminal —
+      fix the cause (re-quote, pick another VIN, repair the payload, refresh consent) rather than retrying as-is.
     </div>
 
     <h2>The full code set (21)</h2>
