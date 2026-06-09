@@ -1,7 +1,9 @@
 /* marty-widget.js — floating read-only chat helper ("Marty") for dmc-12.ai.
- * Talks to mm-backend POST /marty/chat (SSE). Vanilla IIFE, no deps; reuses the
- * dmc12.css design tokens (--accent #1537a6, Inter). v1 is read-only: Marty
- * searches inventory and pulls live pricing only. */
+ * Talks to mm-backend POST /marty/chat (SSE). Vanilla IIFE, no deps; inherits
+ * the host page's :root design tokens (crimson accent + cream surface, squared
+ * and flat to match the landing page). Hardcoded var() fallbacks keep the
+ * still-rounded blue guide pages correct. v1 is read-only: Marty searches
+ * inventory and pulls live pricing only. */
 (function () {
   'use strict';
   if (window.__martyLoaded) return;
@@ -26,16 +28,16 @@
   function injectStyles() {
     var css =
       '.marty-launch{position:fixed;right:20px;bottom:20px;z-index:2147483000;' +
-      'display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:24px;' +
+      'display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:0;' +
       'border:1px solid var(--accent,#1537a6);background:var(--accent,#1537a6);color:#fff;' +
-      "font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:600;cursor:pointer;" +
-      'box-shadow:0 6px 20px rgba(21,55,166,.28);transition:transform .12s,box-shadow .12s}' +
-      '.marty-launch:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(21,55,166,.34)}' +
+      "font-family:'Barlow','Inter',system-ui,sans-serif;font-size:14px;font-weight:600;cursor:pointer;" +
+      'box-shadow:0 6px 20px rgba(10,10,10,.18);transition:transform .12s,box-shadow .12s}' +
+      '.marty-launch:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(10,10,10,.24)}' +
       '.marty-launch[hidden]{display:none}' +
       '.marty-panel{position:fixed;right:20px;bottom:20px;z-index:2147483000;width:370px;max-width:calc(100vw - 32px);' +
       'height:560px;max-height:calc(100vh - 40px);display:none;flex-direction:column;overflow:hidden;' +
-      'background:var(--bg,#fff);border:1px solid var(--line-strong,#cfcec6);border-radius:14px;' +
-      "font-family:'Inter',system-ui,sans-serif;box-shadow:0 16px 48px rgba(0,0,0,.22)}" +
+      'background:var(--bg,#fff);border:1px solid var(--line-strong,#cfcec6);border-radius:0;' +
+      "font-family:'Barlow','Inter',system-ui,sans-serif;box-shadow:0 16px 48px rgba(0,0,0,.22)}" +
       '.marty-panel.open{display:flex}' +
       '.marty-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;' +
       'background:var(--accent,#1537a6);color:#fff}' +
@@ -44,14 +46,14 @@
       '.marty-x{appearance:none;border:0;background:transparent;color:#fff;font-size:20px;line-height:1;cursor:pointer;opacity:.85;padding:2px 6px}' +
       '.marty-x:hover{opacity:1}' +
       '.marty-log{flex:1;overflow-y:auto;padding:14px;background:var(--bg-soft,#f7f7f5);display:flex;flex-direction:column;gap:10px}' +
-      '.marty-msg{max-width:84%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.5;word-wrap:break-word}' +
-      '.marty-msg.user{align-self:flex-end;background:var(--accent,#1537a6);color:#fff;border-bottom-right-radius:4px;white-space:pre-wrap}' +
-      '.marty-msg.bot{align-self:flex-start;max-width:90%;background:var(--bg,#fff);color:var(--ink,#111);border:1px solid var(--line,#e6e5e0);border-bottom-left-radius:4px}' +
+      '.marty-msg{max-width:84%;padding:9px 12px;border-radius:0;font-size:14px;line-height:1.5;word-wrap:break-word}' +
+      '.marty-msg.user{align-self:flex-end;background:var(--accent,#1537a6);color:#fff;border-bottom-right-radius:0;white-space:pre-wrap}' +
+      '.marty-msg.bot{align-self:flex-start;max-width:90%;background:var(--bg,#fff);color:var(--ink,#111);border:1px solid var(--line,#e6e5e0);border-bottom-left-radius:0}' +
       // Markdown elements inside bot bubbles (structure supplied by renderMarkdown).
       '.marty-msg.bot p{margin:0 0 8px}.marty-msg.bot p:last-child{margin-bottom:0}' +
       '.marty-msg.bot ul,.marty-msg.bot ol{margin:6px 0;padding-left:20px}.marty-msg.bot li{margin:2px 0}' +
       '.marty-msg.bot strong{font-weight:600}' +
-      ".marty-msg.bot code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--accent-soft,#eef1fb);padding:1px 5px;border-radius:4px}" +
+      ".marty-msg.bot code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--accent-soft,#eef1fb);padding:1px 5px;border-radius:0}" +
       '.marty-msg.bot a{color:var(--accent,#1537a6);text-decoration:underline}' +
       '.marty-tbl{overflow-x:auto;margin:6px 0;-webkit-overflow-scrolling:touch}' +
       '.marty-msg.bot table{border-collapse:collapse;width:100%;font-size:12.5px}' +
@@ -61,10 +63,10 @@
       "font-family:'JetBrains Mono',monospace;padding:2px 4px}" +
       '.marty-foot{padding:10px 12px;border-top:1px solid var(--line,#e6e5e0);background:var(--bg,#fff)}' +
       '.marty-row{display:flex;gap:8px;align-items:flex-end}' +
-      '.marty-row textarea{flex:1;resize:none;border:1px solid var(--line-strong,#cfcec6);border-radius:9px;' +
-      "padding:9px 11px;font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.4;max-height:96px;outline:none}" +
+      '.marty-row textarea{flex:1;resize:none;border:1px solid var(--line-strong,#cfcec6);border-radius:0;' +
+      "padding:9px 11px;font-family:'Barlow','Inter',system-ui,sans-serif;font-size:14px;line-height:1.4;max-height:96px;outline:none}" +
       '.marty-row textarea:focus{border-color:var(--accent,#1537a6)}' +
-      '.marty-send{appearance:none;border:0;border-radius:9px;background:var(--accent,#1537a6);color:#fff;' +
+      '.marty-send{appearance:none;border:0;border-radius:0;background:var(--accent,#1537a6);color:#fff;' +
       'font-weight:600;font-size:14px;padding:9px 14px;cursor:pointer}' +
       '.marty-send:disabled{opacity:.5;cursor:default}' +
       '.marty-disc{margin-top:7px;font-size:10.5px;color:var(--ink-mute,#78786f);line-height:1.4}' +

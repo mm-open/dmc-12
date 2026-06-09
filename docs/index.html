@@ -7,22 +7,22 @@
 <meta name="description" content="The first dealership you can talk to as an AI agent. Public MCP endpoint, signed A2A Agent Card, and UCP v1 manifest." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #ffffff;
-    --bg-soft: #f7f7f5;
-    --ink: #111111;
-    --ink-soft: #4a4a48;
-    --ink-mute: #78786f;
-    --line: #e6e5e0;
-    --line-strong: #cfcec6;
-    --accent: #1537a6;       /* confident deep blue, original (not brand-copied) */
-    --accent-ink: #0e256e;
-    --accent-soft: #eef1fb;
+    --bg: #f8f7f4;           /* thearm.ai cream */
+    --bg-soft: #f0ede8;      /* warm beige */
+    --ink: #0a0a0a;
+    --ink-soft: #444444;
+    --ink-mute: #6b6b6b;
+    --line: #e8e6e1;
+    --line-strong: #d6d3cb;
+    --accent: #c41230;       /* thearm.ai crimson */
+    --accent-ink: #9d0e26;   /* deep crimson */
+    --accent-soft: #f7e7ea;  /* crimson tint */
     --ok: #0a6b3a;
-    --code-bg: #0e0e0d;
-    --code-ink: #e8e6de;
+    --code-bg: #0a0a0a;
+    --code-ink: #f8f7f4;
     --code-mute: #8a8a7f;
     --maxw: 1080px;
     --pad: 28px;
@@ -30,7 +30,7 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Barlow', system-ui, sans-serif;
     background: var(--bg);
     color: var(--ink);
     font-size: 16px;
@@ -39,8 +39,8 @@
     text-rendering: optimizeLegibility;
   }
   .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-feature-settings: "zero" 1, "ss01" 1; }
-  a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
-  a:hover { color: var(--accent); }
+  a { color: var(--ink); text-decoration: none; }
+  a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
   hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
 
   /* Top strip */
@@ -66,7 +66,7 @@
     letter-spacing: -0.005em;
   }
   .strip .brand .glyph {
-    width: 22px; height: 22px; border-radius: 4px;
+    width: 22px; height: 22px; border-radius: 0;
     object-fit: contain;
   }
   .strip .meta {
@@ -102,15 +102,17 @@
   }
   .hero .kicker .tag {
     border: 1px solid var(--line-strong);
-    padding: 3px 8px; border-radius: 999px;
+    padding: 3px 8px; border-radius: 0;
     background: var(--bg-soft);
     color: var(--ink-soft);
   }
   .hero h1 {
+    font-family: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
     font-size: clamp(34px, 5.4vw, 60px);
     line-height: 1.02;
-    letter-spacing: -0.03em;
-    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-weight: 800;
+    text-transform: uppercase;
     margin: 0 0 22px;
     max-width: 18ch;
     text-wrap: balance;
@@ -130,7 +132,7 @@
   .endpoint {
     background: var(--code-bg);
     color: var(--code-ink);
-    border-radius: 10px;
+    border-radius: 0;
     padding: 18px 20px;
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -151,13 +153,13 @@
     scrollbar-width: thin;
   }
   .endpoint .url::-webkit-scrollbar { height: 6px; }
-  .endpoint .url::-webkit-scrollbar-thumb { background: #2b2b29; border-radius: 6px; }
+  .endpoint .url::-webkit-scrollbar-thumb { background: #2b2b29; border-radius: 0; }
   .endpoint button.copy {
     background: #1d1d1c;
     color: var(--code-ink);
     border: 1px solid #2f2f2c;
     padding: 7px 12px;
-    border-radius: 6px;
+    border-radius: 0;
     font-family: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -175,9 +177,12 @@
   .btn {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 18px;
-    border-radius: 7px;
+    border-radius: 0;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     text-decoration: none;
     border: 1px solid var(--line-strong);
     background: var(--bg);
@@ -204,7 +209,7 @@
     margin-top: 64px;
     padding: 44px 28px 36px;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 0;
     background: var(--bg-soft);
     display: grid;
     grid-template-columns: 1fr 70px 1fr 70px 1fr;
@@ -214,7 +219,7 @@
   .diagram .node {
     padding: 18px;
     border: 1px solid var(--line);
-    border-radius: 9px;
+    border-radius: 0;
     background: var(--bg);
   }
   .diagram .node .eyebrow {
@@ -280,14 +285,17 @@
   .sec-head .num {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    color: var(--ink-mute);
+    color: var(--accent);
     letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   .sec-head h2 {
+    font-family: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
     font-size: clamp(26px, 3.4vw, 34px);
     line-height: 1.1;
-    letter-spacing: -0.02em;
-    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-weight: 800;
+    text-transform: uppercase;
     margin: 0;
     text-wrap: balance;
   }
@@ -305,7 +313,7 @@
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 0;
     overflow: hidden;
   }
   .explainer .item {
@@ -339,7 +347,7 @@
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 0;
     overflow: hidden;
   }
   .tool {
@@ -364,7 +372,7 @@
   }
   .tool.read .scope .pip { background: #19b36a; }
   .tool.write .scope .pip { background: var(--accent); }
-  .tool.handoff .scope .pip { background: #c2410c; }
+  .tool.handoff .scope .pip { background: #b85042; }
   .tool .name {
     font-family: 'JetBrains Mono', monospace;
     font-size: 13.5px;
@@ -398,7 +406,7 @@
   }
   .track {
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 0;
     padding: 32px 30px;
     display: flex;
     flex-direction: column;
@@ -420,7 +428,7 @@
   }
   .track .eyebrow .idx {
     width: 18px; height: 18px;
-    border-radius: 4px;
+    border-radius: 0;
     background: var(--ink);
     color: #fff;
     display: grid; place-items: center;
@@ -429,9 +437,11 @@
   }
   .track.partner .eyebrow .idx { background: var(--accent); }
   .track h3 {
+    font-family: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
     font-size: 22px;
-    letter-spacing: -0.015em;
-    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+    text-transform: uppercase;
     margin: 0 0 6px;
   }
   .track .who {
@@ -460,7 +470,7 @@
     margin-top: 6px;
     width: 10px; height: 10px;
     border: 1px solid var(--line-strong);
-    border-radius: 2px;
+    border-radius: 0;
     background: var(--bg);
     position: relative;
   }
@@ -468,19 +478,19 @@
     content: '';
     position: absolute; inset: 1px;
     background: #19b36a;
-    border-radius: 1px;
+    border-radius: 0;
   }
   .track.partner ul.feats li .chk::after {
     content: '';
     position: absolute; inset: 1px;
     background: var(--accent);
-    border-radius: 1px;
+    border-radius: 0;
   }
   .track .scopes {
     margin: 0 0 22px;
     padding: 14px 16px;
     border: 1px dashed var(--line-strong);
-    border-radius: 8px;
+    border-radius: 0;
     background: var(--bg);
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -498,7 +508,7 @@
   .track .scopes .chip {
     display: inline-block;
     padding: 2px 7px;
-    border-radius: 4px;
+    border-radius: 0;
     background: var(--accent-soft);
     color: var(--accent-ink);
     margin: 2px 4px 2px 0;
@@ -510,7 +520,7 @@
   .track .mini-endpoint {
     background: var(--code-bg);
     color: var(--code-ink);
-    border-radius: 8px;
+    border-radius: 0;
     padding: 12px 14px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -525,11 +535,11 @@
     overflow-x: auto; white-space: nowrap; scrollbar-width: thin;
   }
   .track .mini-endpoint .url::-webkit-scrollbar { height: 5px; }
-  .track .mini-endpoint .url::-webkit-scrollbar-thumb { background: #2b2b29; border-radius: 6px; }
+  .track .mini-endpoint .url::-webkit-scrollbar-thumb { background: #2b2b29; border-radius: 0; }
   .track .mini-endpoint button {
     background: #1d1d1c; color: var(--code-ink);
     border: 1px solid #2f2f2c; padding: 5px 10px;
-    border-radius: 5px; font-family: inherit; font-size: 11px;
+    border-radius: 0; font-family: inherit; font-size: 11px;
     cursor: pointer;
   }
   .track .mini-endpoint button.copied { color: #67e19a; border-color: #1b4633; background: #0d1e16; }
@@ -552,7 +562,7 @@
     gap: 20px;
     padding: 18px 20px;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 0;
     background: var(--bg);
     align-items: start;
   }
@@ -581,13 +591,14 @@
   /* Releases */
   .release-list { display: grid; grid-template-columns: 1fr; gap: 12px; }
   .release-list .what .ver { font-family: 'JetBrains Mono', monospace; color: var(--accent-ink); font-weight: 600; }
-  .release-list .summary { font-size: 14px; color: var(--ink); line-height: 1.55; }
+  .release-list .summary,
+  .milestone-banner .summary { font-size: 14px; color: var(--ink); line-height: 1.55; }
 
   /* Fork */
   .fork {
     background: var(--bg-soft);
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 0;
     padding: 32px;
     display: grid;
     grid-template-columns: 1fr auto;
@@ -595,10 +606,12 @@
     align-items: center;
   }
   .fork h3 {
+    font-family: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
     margin: 0 0 6px;
     font-size: 20px;
-    letter-spacing: -0.015em;
-    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+    text-transform: uppercase;
   }
   .fork p {
     margin: 0;
@@ -640,7 +653,7 @@
     margin-bottom: 14px;
   }
   footer .brand-line .glyph {
-    width: 22px; height: 22px; border-radius: 4px;
+    width: 22px; height: 22px; border-radius: 0;
     object-fit: contain;
   }
   footer .brand-line .name { font-weight: 600; font-size: 14px; }
@@ -669,7 +682,7 @@
     background: var(--ink);
     color: #fff;
     padding: 10px 16px;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: 13px;
     font-family: 'JetBrains Mono', monospace;
     opacity: 0;
@@ -679,6 +692,46 @@
     box-shadow: 0 4px 14px rgba(0,0,0,.18);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Milestone band + afterquote + Releases milestone banner (new, thearm.ai 2px crimson accent rule) */
+  .milestone {
+    border-left: 2px solid var(--accent);
+    padding-left: 16px;
+    margin-bottom: 32px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    max-width: 58ch;
+  }
+  .milestone-date {
+    display: block;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .afterquote {
+    margin-top: 28px;
+    font-size: 13px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+  }
+  .afterquote .pp { color: var(--accent); }
+  .afterquote .soon { color: var(--ink-mute); }
+  .milestone-banner {
+    border-left: 2px solid var(--accent);
+    padding-left: 16px;
+    margin-bottom: 24px;
+  }
+  .milestone-tag {
+    display: block;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
 
   /* Responsive */
   @media (max-width: 980px) {
@@ -742,7 +795,12 @@
     </div>
     <h1>The first dealership you can <em>talk to as an AI agent.</em></h1>
     <p class="lede">
-      One production endpoint. Real inventory. Real 30&#8209;minute quotes, real soft holds, real hand&#8209;off to a live sales manager. Connect from Claude, ChatGPT, Gemini, or your own agent — or wire it straight into your partner stack.
+      One production endpoint. Real inventory. Real 30&#8209;minute quotes, real soft holds, and the entry point to an agentic deal that carries forward through PromisePath (coming soon). Connect from Claude, ChatGPT, Gemini, or your own agent, or wire it straight into your partner stack.
+    </p>
+
+    <p class="milestone">
+      <span class="milestone-date mono">May 4, 2026</span>
+      The first agent-to-agent car deal in U.S. history was completed at Mark Miller Subaru, between a CarEdge buyer agent and Mark Miller Subaru over the dmc-12 protocol.
     </p>
 
     <div class="endpoint" id="heroEndpoint">
@@ -784,6 +842,10 @@
         <div class="sub">mm_inventory.vehicles — asking price, status, VINs, photos. Freshness&nbsp;≤&nbsp;3600s.</div>
       </div>
     </div>
+
+    <p class="afterquote mono">
+      After the quote, dmc-12 initiates the deal. <span class="pp">PromisePath</span> <span class="soon">(coming soon)</span> carries it forward.
+    </p>
   </div>
 </section>
 
@@ -884,7 +946,7 @@
     <div class="tools-legend">
       <span class="lg"><span class="pip" style="background:#19b36a;"></span>read · public&nbsp;+&nbsp;partner</span>
       <span class="lg"><span class="pip" style="background: var(--accent);"></span>write · partner only</span>
-      <span class="lg"><span class="pip" style="background:#c2410c;"></span>hand-off · partner only · PII-accepting</span>
+      <span class="lg"><span class="pip" style="background:#b85042;"></span>hand-off · partner only · PII-accepting</span>
     </div>
 
     <p style="margin-top: 22px; font-size: 13px; color: var(--ink-mute); line-height: 1.6;">
@@ -922,7 +984,7 @@
           <li><span class="chk"></span><div><strong>Search real inventory</strong> — semantic or structured. Filter by year, price, mileage, trim.</div></li>
           <li><span class="chk"></span><div><strong>Check price &amp; availability</strong> by VIN. Batch up to 50 at a time.</div></li>
           <li><span class="chk"></span><div><strong>Ask for a 30-minute quote</strong> at the listed asking price (no negotiation — it's the real number).</div></li>
-          <li><span class="chk"></span><div><strong>Request a call-back</strong> from a live Mark Miller sales manager when you're ready to talk.</div></li>
+          <li><span class="chk"></span><div><strong>Kick off the deal</strong> when you're ready. Your quote becomes the entry point to an agentic deal flow, carried forward through PromisePath (coming soon).</div></li>
         </ul>
 
         <div class="cta-area">
@@ -1073,6 +1135,13 @@
       <div>
         <h2>Version history.</h2>
         <p class="sub">DMC-12 follows SemVer 2.0.0. Breaking changes are allowed at any minor bump during the 0.x series; v1.0.0 will be the first backward-compatibility commitment. Each version below is tagged in <span class="mono">mm-open/dmc-12</span>.</p>
+      </div>
+    </div>
+
+    <div class="milestone-banner">
+      <span class="milestone-tag mono">Milestone · 2026-05-04</span>
+      <div class="summary">
+        The first agent-to-agent car deal in U.S. history was completed at Mark Miller Subaru, between a CarEdge buyer agent and Mark Miller Subaru over the dmc-12 protocol.
       </div>
     </div>
 
