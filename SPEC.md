@@ -1,7 +1,7 @@
 # DMC-12 Specification
 
-**Version:** 0.5.0
-**Date:** 2026-05-29
+**Version:** 0.6.0
+**Date:** 2026-06-10
 **Status:** Reference implementation at Mark Miller Subaru Midtown.
 
 DMC-12 is an automotive extension set to the
@@ -25,7 +25,12 @@ full `price_lines` + fee/tax totals + disclosure metadata
 (`OutTheDoorEstimate`), not just a bare total; see §15. It also stubs the automotive-specific
 capabilities (trade intake, test-drive, F&I menu, return policy) that
 require DMS writes to implement but can be declared on a manifest as
-capabilities are brought online.
+capabilities are brought online. v0.6 adds one more additive,
+non-breaking capability — `ai.dmc12.automotive.stores`, a read-only
+`list_stores` tool publishing the canonical name + address + website for
+each rooftop so an agent can resolve the `store_code` carried on every
+vehicle without guessing — and enriches the manifest's
+`merchant.locations` with the same metadata; see §16.
 
 ## 1. Scope
 
@@ -56,6 +61,7 @@ DMC-12 capabilities extend two UCP core capabilities:
 | `dev.ucp.shopping.checkout` | `ai.dmc12.automotive.trade_intake` *(stub — v0.3+)* | Trade-in intake also extends checkout. Schema is published as a stub so it shows up in capability indexing; `additionalProperties: false` prevents accidental PII leakage through an undefined surface. |
 | *(none — new namespace)* | `ai.dmc12.automotive.test_drive` + `.fni_menu` + `.return_policy` *(stub — v0.3+)* | Out-of-band from UCP checkout; they describe the retail wrapper around the vehicle sale rather than the transaction itself. |
 | *(cross-cutting — every capability)* | `ai.dmc12.automotive.errors` *(implemented v0.3)* | A shared error taxonomy — every tool error carries `error_code` + `retryable` + `error_id`. No tool surface of its own; see §8. |
+| `dev.ucp.shopping.catalog` | `ai.dmc12.automotive.stores` *(implemented v0.6)* | Publishes canonical rooftop metadata (name, address, website) via the read-only `list_stores` tool, so the `store_code` on every vehicle record resolves to a named, located dealership. `inventory:read` scope; see §16. |
 
 AP2 Intent / Cart / Payment mandates are **not** implemented in v0.1. A
 DMC-12 `deal_handoff` call records a Boolean `customer_consent` artifact
@@ -293,7 +299,25 @@ Lake City, UT:
 
 ## 11. Release Notes
 
-### v0.5.0 — current release (2026-05-29)
+### v0.6.0 — current release (2026-06-10)
+
+v0.6 is an additive, non-breaking feature cut. Full detail in §16. In brief:
+
+- **`ai.dmc12.automotive.stores`** *(new, v0.1.0)* — a read-only
+  `list_stores` tool that publishes the canonical name + structured address +
+  website for each rooftop the merchant operates. It resolves the `store_code`
+  carried on every vehicle record to a named, located dealership, so an agent
+  never has to infer a store's identity, location, or URL. Reuses the existing
+  `inventory:read` scope — no new OAuth scope.
+- **`merchant.locations` enrichment** — each manifest location entry now carries
+  `address` + `website` alongside `store_code` + `display_name`, drawn from the
+  same source as `list_stores`. (This also corrects the reference deployment's
+  MMS display name from "Salt Lake" to "Midtown".)
+
+No new scopes, no transport change, no auth change, no breaking change to any
+existing capability.
+
+### v0.5.0 (2026-05-29)
 
 v0.5 promotes the v0.4 OTD-on-quote estimate from a bare total to a fully
 **itemized** object, carrying through the breakdown the reference
@@ -507,3 +531,60 @@ remains the only committed figure; the OTD is always a non-binding estimate.
 it. An agent that only read the total continues to work — `amount`/`currency`
 sit at the top level of `OutTheDoorEstimate` exactly where the bare `Money`
 total used to be.
+
+## 16. v0.6 Additions
+
+v0.6 is an additive, non-breaking cut. It publishes authoritative rooftop
+metadata so that the `store_code` carried on every vehicle record (§4.1)
+resolves to a named, located dealership instead of an opaque code an agent has
+to guess against. It adds one read tool and one manifest enrichment; no existing
+capability, scope, transport, or auth surface changes.
+
+### 16.1 New capability: `ai.dmc12.automotive.stores` (v0.1.0)
+
+A read-only capability with a single tool, `list_stores`, that takes no
+parameters and returns every rooftop the merchant operates. Each record carries:
+
+- **`store_code`** — the dealer rooftop code (`^[A-Z]{2,6}$`). This is the
+  **same** value that appears on every vehicle record from the inventory
+  capability (`search_inventory` / `list_inventory` / `get_vehicle_by_vin`), so
+  an agent can build a `{store_code → store}` map in one call and resolve any
+  vehicle's home rooftop.
+- **`name`** — public display name of the rooftop.
+- **`address`** — a **structured** object (`street`, `city`, `state` as a USPS
+  two-letter code, `postal_code`), not a flat string, so it can be validated and
+  geocoded.
+- **`website`** — the rooftop's website.
+
+`list_stores` reuses the existing **`inventory:read`** scope — store metadata is
+the same public, read-only class of data as the inventory it annotates, so no
+new OAuth scope is introduced. The capability is always-on (no per-deployment
+toggle): a merchant that advertises any DMC-12 inventory capability advertises
+`stores` too.
+
+The schema is [`schemas/stores.json`](./schemas/stores.json); the capability doc
+is [`capabilities/stores.md`](./capabilities/stores.md).
+
+### 16.2 `merchant.locations` enrichment
+
+Each entry in the manifest's `merchant.locations[]` now carries `address` +
+`website` alongside the existing `store_code` + `display_name`, sourced from the
+same store metadata that backs `list_stores`. A manifest reader that only read
+`store_code`/`display_name` is unaffected — the new fields are additive. This
+enrichment also corrected the reference deployment's MMS display name, which had
+drifted to "Mark Miller Subaru Salt Lake" while every other artifact named it
+"Mark Miller Subaru Midtown".
+
+### 16.3 Phone intentionally omitted (v0.1)
+
+The `stores` capability publishes name + address + website only. A public phone
+number and store hours are deliberately deferred — the address + website are
+sufficient to identify, locate, and link a rooftop, and a public sales/service
+phone routes through call-tracking that changes more often than the spec should.
+They MAY be added additively in a later minor version.
+
+### 16.4 No scope, transport, or auth change
+
+`list_stores` is `inventory:read`; the manifest enrichment is additive. No new
+OAuth scopes, no transport change, no auth change, and no breaking change to any
+existing capability.
