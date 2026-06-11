@@ -42,7 +42,7 @@
         },
         "name": {"type": "string", "minLength": 1, "description": "Public display name of the rooftop."},
         "address": {"$ref": "#/$defs/Address"},
-        "website": {"type": "string", "format": "uri"}
+        "website": {"type": "string", "format": "uri", "pattern": "^https?://", "maxLength": 256}
       }
     },
     "Address": {

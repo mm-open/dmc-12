@@ -131,7 +131,8 @@ the place to file PRs.
 - **`stock_number`** — dealer-internal stock number. Non-normative, but
   typically used as a human-friendly secondary identifier.
 - **`store_code`** — dealer-internal rooftop identifier (one dealer may
-  operate multiple rooftops). Three-letter uppercase code (`MMS`, `MMU`).
+  operate multiple rooftops). Uppercase rooftop code, two to six letters
+  (`^[A-Z]{2,6}$`; e.g. `MMS`, `MMU`).
 
 ### 4.2 Condition
 
@@ -290,10 +291,13 @@ Lake City, UT:
   `/.well-known/agent-card.json`).
 - Transports: MCP (`/mcp/`) + A2A JSON-RPC (`/a2a/`, OAuth 2.1 JWT per
   RFC 8707 resource-indicator scoping).
-- A redacted snapshot of the live manifest lives at
+- A fully-participating reference sample of the manifest lives at
   [`examples/markmiller-manifest.json`](./examples/markmiller-manifest.json).
-  URLs and operational identifiers in that snapshot are replaced with
-  `mcp.dealer.example` placeholders; a conformant consumer MUST resolve
+  It advertises every DMC-12 capability — including negotiation, which MM's
+  production manifest does not enable — so it is the complete reference
+  shape, not a mirror of the live deployment. URLs and operational
+  identifiers are replaced with `mcp.dealer.example` placeholders; a
+  conformant consumer MUST resolve
   the actual endpoint from the dealer's published UCP well-known URL
   rather than the example file.
 
@@ -396,6 +400,18 @@ v0.2: the `otd-pricing.md` capability doc was renamed to
 deleted in favor of `pricing_disclosure.json`. Implementations migrating
 from v0.1 should replace any `otd_pricing` references with
 `ai.dmc12.automotive.pricing_disclosure`.
+
+### v0.1.1 (2026-05-20)
+
+Patch release: `deal_handoff` bumped to capability 0.1.1 — adds an optional
+structured `trade_in` object to the handoff payload (additive, non-breaking).
+
+### v0.1.0 (2026-04-21)
+
+Initial publication under the `org.dmc12.automotive.*` namespace (renamed to
+`ai.dmc12.automotive.*` in v0.2). Implemented: inventory, quote, reservation,
+deal_handoff. Stubs: otd_pricing, trade_intake, test_drive, fni_menu,
+return_policy.
 
 ## 12. Authors
 

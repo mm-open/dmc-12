@@ -24,7 +24,7 @@ drivetrain, body style, and days-on-lot.
 
 ## Tool surface
 
-A merchant exposing this capability SHOULD publish three MCP tools that
+A merchant exposing this capability SHOULD publish four MCP tools that
 operate over the inventory contract:
 
 | Tool | Scope | Purpose |
