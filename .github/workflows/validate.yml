@@ -56,6 +56,8 @@ jobs:
           python-version: "3.12"
       - name: Structural check on the reference manifest
         run: python3 .github/workflows/check_manifest.py
+      - name: Version consistency across SPEC/README/GOVERNANCE/site/manifest
+        run: python3 .github/workflows/check_version_consistency.py
 
   dmc12-ai-drift:
     # Drift check runs on schedule (catches Worker config rot) and on
