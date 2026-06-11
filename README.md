@@ -55,10 +55,18 @@ capabilities publish `payment.handlers: []` until AP2 lands.
 
 ## Status
 
-**v0.5 (Current Release, 2026-05-29).** Reference implementation in
+**v0.6 (Current Release, 2026-06-10).** Reference implementation in
 production at Mark Miller Subaru Midtown (Salt Lake City, UT).
 
-Added in v0.5 (current release) — additive for OTD-omitting payloads; the one optional `out_the_door` field changes shape (field-access compatible — `amount`/`currency` stay at the top level). See [`SPEC.md`](./SPEC.md) §15.
+Added in v0.6 — additive and non-breaking (one normative pattern
+alignment on `inventory.store_code`; see SPEC §11 v0.6.0).
+
+- `ai.dmc12.automotive.stores` → **capability 0.1.0** *(new)* — a read-only `list_stores` tool publishing the canonical name + structured address + website for each rooftop, so the `store_code` on every vehicle record resolves to a named, located dealership without guessing. Reuses the `inventory:read` scope — no new OAuth scope.
+- `merchant.locations` enrichment — each manifest location now carries `address` + `website` alongside `store_code` + `display_name` (also corrects the MMS display name from "Salt Lake" to "Midtown").
+
+See [`SPEC.md`](./SPEC.md) §16.
+
+Added in v0.5 — additive for OTD-omitting payloads; the one optional `out_the_door` field changes shape (field-access compatible — `amount`/`currency` stay at the top level).
 
 - `ai.dmc12.automotive.quote` → **capability 0.4.0** — the quote output's optional `out_the_door` estimate is now **itemized**: it changes from a bare `Money` total to an `OutTheDoorEstimate` (new in `common.json` 0.2.0) carrying `price_lines` (vehicle price + each fee/tax line), `fees_total`, `taxes_total`, and disclosure metadata (`estimate`, `jurisdiction`, `as_of`, `disclosure_form_url`). `subtotal` is omitted (derivable). The `out_the_door_estimate: true` pairing and the field's optionality are unchanged. No new tools, scopes, or fee-math change.
 

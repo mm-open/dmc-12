@@ -14,7 +14,7 @@
         }
       },
       "ai.dmc12.automotive": {
-        "version": "0.5.0",
+        "version": "0.6.0",
         "spec": "https://dmc12.ai/specification/SPEC.md",
         "brand": {
           "logo_light": "https://dmc12.ai/branding/dmc12-mark-blue.png",
@@ -72,6 +72,13 @@
         "version": "0.1.0",
         "spec": "https://dmc12.ai/specification/pricing-disclosure.md",
         "schema": "https://dmc12.ai/schemas/pricing_disclosure.json"
+      },
+      {
+        "name": "ai.dmc12.automotive.stores",
+        "version": "0.1.0",
+        "spec": "https://dmc12.ai/specification/stores.md",
+        "schema": "https://dmc12.ai/schemas/stores.json",
+        "extends": "dev.ucp.shopping.catalog"
       }
     ]
   },
@@ -79,8 +86,18 @@
     "name": "Mark Miller Subaru",
     "brand": "Subaru",
     "locations": [
-      {"store_code": "MMS", "display_name": "Mark Miller Subaru Midtown"},
-      {"store_code": "MMU", "display_name": "Mark Miller Subaru South Towne"}
+      {
+        "store_code": "MMS",
+        "display_name": "Mark Miller Subaru Midtown",
+        "address": {"street": "3535 S State St", "city": "South Salt Lake", "state": "UT", "postal_code": "84115"},
+        "website": "https://www.markmillersubarumidtown.com"
+      },
+      {
+        "store_code": "MMU",
+        "display_name": "Mark Miller Subaru South Towne",
+        "address": {"street": "10920 S State St", "city": "Sandy", "state": "UT", "postal_code": "84070"},
+        "website": "https://www.markmillersubarusouthtowne.com"
+      }
     ],
     "contact": {
       "website": "https://www.markmillersubaru.com",

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dmc12.ai/schemas/stores.json",
+  "title": "DMC-12 Stores Capability v0.1.0",
+  "description": "Canonical public store (rooftop) metadata for ai.dmc12.automotive.stores. The list_stores tool resolves the store_code carried on every vehicle record to a human-readable name, structured postal address, and website.",
+  "type": "object",
+  "required": ["input", "output"],
+  "additionalProperties": false,
+  "properties": {
+    "input": {
+      "title": "list_stores input",
+      "description": "list_stores takes no parameters — it returns every rooftop the merchant operates.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "output": {
+      "title": "list_stores output",
+      "type": "object",
+      "required": ["stores", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "stores": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/StoreRecord"}
+        },
+        "count": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "$defs": {
+    "StoreRecord": {
+      "title": "Store record",
+      "type": "object",
+      "required": ["store_code", "name", "address", "website"],
+      "additionalProperties": false,
+      "properties": {
+        "store_code": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,6}$",
+          "description": "Dealer rooftop code. Matches the store_code field on every vehicle record (search_inventory / list_inventory / get_vehicle_by_vin)."
+        },
+        "name": {"type": "string", "minLength": 1, "description": "Public display name of the rooftop."},
+        "address": {"$ref": "#/$defs/Address"},
+        "website": {"type": "string", "format": "uri", "pattern": "^https?://", "maxLength": 256}
+      }
+    },
+    "Address": {
+      "title": "Postal address",
+      "type": "object",
+      "required": ["street", "city", "state", "postal_code"],
+      "additionalProperties": false,
+      "properties": {
+        "street": {"type": "string", "minLength": 1},
+        "city": {"type": "string", "minLength": 1},
+        "state": {"type": "string", "pattern": "^[A-Z]{2}$", "description": "USPS two-letter state abbreviation."},
+        "postal_code": {"type": "string", "pattern": "^[0-9]{5}(-[0-9]{4})?$"}
+      }
+    }
+  },
+  "examples": [
+    {
+      "input": {},
+      "output": {
+        "stores": [
+          {
+            "store_code": "MMS",
+            "name": "Mark Miller Subaru Midtown",
+            "address": {
+              "street": "3535 S State St",
+              "city": "South Salt Lake",
+              "state": "UT",
+              "postal_code": "84115"
+            },
+            "website": "https://www.markmillersubarumidtown.com"
+          },
+          {
+            "store_code": "MMU",
+            "name": "Mark Miller Subaru South Towne",
+            "address": {
+              "street": "10920 S State St",
+              "city": "Sandy",
+              "state": "UT",
+              "postal_code": "84070"
+            },
+            "website": "https://www.markmillersubarusouthtowne.com"
+          }
+        ],
+        "count": 2
+      }
+    }
+  ]
+}

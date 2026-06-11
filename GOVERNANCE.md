@@ -7,7 +7,7 @@ today and how it may evolve.
 
 ## Status
 
-- **Current version:** v0.5.0 (current release).
+- **Current version:** v0.6.0 (current release).
 - **v0.x** follows SemVer's pre-1.0 rules: breaking changes are permitted
   at any minor-version bump.
 - **v1.0.0** will be the first stable release. After v1.0, backward
