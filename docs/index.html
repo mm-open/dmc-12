@@ -783,7 +783,7 @@
     <div class="meta mono">
       <span><span class="dot"></span>endpoint live</span>
       <span class="sep">·</span>
-      <span>spec 2026-05-29 · DMC-12 v0.5</span>
+      <span>spec 2026-06-10 · DMC-12 v0.6</span>
       <span class="sep">·</span>
       <span>UCP v1</span>
     </div>
@@ -834,7 +834,7 @@
       <div class="node">
         <div class="eyebrow">Endpoint</div>
         <div class="ttl">mm-inventory-mcp · Cloud Run</div>
-        <div class="sub">10 tools at MM. Scope-gated. 60&nbsp;RPM burst. 90-day audit trail.</div>
+        <div class="sub">11 tools at MM. Scope-gated. 60&nbsp;RPM burst. 90-day audit trail.</div>
       </div>
       <div class="arrow">
         <span class="arrow-lbl mono">hourly&nbsp;sync</span>
@@ -894,8 +894,8 @@
         <div class="num">02 / Tool inventory</div>
       </div>
       <div>
-        <h2>Ten tools at MM. Scope-gated. MM keeps negotiation off — every quote is at asking price.</h2>
-        <p class="sub">Public (consumer) agents see the five read tools. Named partners see all nine grid tools plus <span class="mono">initiate_deal_handoff</span>. The tool catalog returned by <span class="mono">tools/list</span> is filtered by caller class at the server.</p>
+        <h2>Eleven tools at MM. Scope-gated. MM keeps negotiation off — every quote is at asking price.</h2>
+        <p class="sub">Public (consumer) agents see the six read tools. Named partners see all ten grid tools plus <span class="mono">initiate_deal_handoff</span>. The tool catalog returned by <span class="mono">tools/list</span> is filtered by caller class at the server.</p>
       </div>
     </div>
 
@@ -924,6 +924,11 @@
         <div class="scope"><span class="pip"></span>pricing:read</div>
         <div class="name">get_pricing_disclosure</div>
         <div class="desc">Itemized out-the-door estimate — taxes, doc fee, title, registration. Read-only; non-binding; live at MM.</div>
+      </div>
+      <div class="tool read">
+        <div class="scope"><span class="pip"></span>inventory:read</div>
+        <div class="name">list_stores</div>
+        <div class="desc">Canonical rooftop metadata — name, structured address, website — for every store. Resolves the store_code on each vehicle to a named, located dealership. No parameters; read-only.</div>
       </div>
       <div class="tool write">
         <div class="scope"><span class="pip"></span>quote:write</div>
@@ -954,11 +959,11 @@
     </div>
 
     <p style="margin-top: 22px; font-size: 13px; color: var(--ink-mute); line-height: 1.6;">
-      A tenth tool — <span class="mono">initiate_deal_handoff</span> (scope <span class="mono">deal:handoff</span>, PII-accepting, starts the agentic deal) — is available to internal and named-partner agents only. Not exposed on the public rail. Ask us about it in the partner track below.
+      An eleventh tool — <span class="mono">initiate_deal_handoff</span> (scope <span class="mono">deal:handoff</span>, PII-accepting, starts the agentic deal) — is available to internal and named-partner agents only. Not exposed on the public rail. Ask us about it in the partner track below.
     </p>
 
     <p style="margin-top: 14px; font-size: 13px; color: var(--ink-mute); line-height: 1.6;">
-      The DMC-12 v0.2 spec also defines four partner-only negotiation tools — <span class="mono">submit_offer</span>, <span class="mono">submit_counter_offer</span>, <span class="mono">accept_offer</span>, <span class="mono">reject_offer</span> (scope <span class="mono">quote:negotiate</span>) — that bring the canonical surface to 14. <strong>MM keeps negotiation off:</strong> the four tools are not registered on this deployment and the <span class="mono">ai.dmc12.automotive.negotiation</span> capability is not advertised on our UCP manifest. Other dealerships forking the open spec can flip them on.
+      The DMC-12 v0.2 spec also defines four partner-only negotiation tools — <span class="mono">submit_offer</span>, <span class="mono">submit_counter_offer</span>, <span class="mono">accept_offer</span>, <span class="mono">reject_offer</span> (scope <span class="mono">quote:negotiate</span>) — that bring the canonical surface to 15. <strong>MM keeps negotiation off:</strong> the four tools are not registered on this deployment and the <span class="mono">ai.dmc12.automotive.negotiation</span> capability is not advertised on our UCP manifest. Other dealerships forking the open spec can flip them on.
     </p>
   </div>
 </section>
@@ -1074,7 +1079,7 @@
       <div class="verify-row">
         <div class="what">
           UCP manifest
-          <span class="hint">UCP v1 — merchant, capabilities (<span class="mono">ai.dmc12.automotive.*</span>, v0.5), freshness SLA</span>
+          <span class="hint">UCP v1 — merchant, capabilities (<span class="mono">ai.dmc12.automotive.*</span>, v0.6), freshness SLA</span>
         </div>
         <a class="url" data-mcp-path="/.well-known/ucp" data-mcp-role="href" target="_blank" rel="noopener">
           /.well-known/ucp
@@ -1152,8 +1157,17 @@
     <div class="release-list">
       <div class="verify-row">
         <div class="what">
+          <span class="ver">v0.6.0</span>
+          <span class="hint">2026-06-10 · current release</span>
+        </div>
+        <div class="summary">
+          Additive, non-breaking. New <span class="mono">ai.dmc12.automotive.stores</span> capability (0.1.0) — a read-only <span class="mono">list_stores</span> tool publishing the canonical name + structured address + website for every rooftop, so the <span class="mono">store_code</span> on each vehicle record resolves to a named, located dealership instead of an opaque code. Reuses the <span class="mono">inventory:read</span> scope — no new OAuth scope. The manifest's <span class="mono">merchant.locations</span> are enriched with the same <span class="mono">address</span> + <span class="mono">website</span> (and the MMS display name is corrected from "Salt Lake" to "Midtown"). No transport, auth, or breaking change.
+        </div>
+      </div>
+      <div class="verify-row">
+        <div class="what">
           <span class="ver">v0.5.0</span>
-          <span class="hint">2026-05-29 · current release</span>
+          <span class="hint">2026-05-29</span>
         </div>
         <div class="summary">
           The optional <span class="mono">out_the_door</span> estimate on the <span class="mono">request_quote</span> output is now <strong>itemized</strong> — it changes from a bare total to an <span class="mono">OutTheDoorEstimate</span> (new in <span class="mono">common.json</span> 0.2.0) carrying <span class="mono">price_lines</span> (vehicle price + each fee/tax line), <span class="mono">fees_total</span>, <span class="mono">taxes_total</span>, and disclosure metadata (capability <span class="mono">quote</span> → 0.4.0). <span class="mono">subtotal</span> is omitted (derivable). No new tools, scopes, or fee-math change. Additive for payloads that omit the OTD; for payloads that carried it the field's shape changes (a breaking change to that one optional field, but <strong>field-access compatible</strong> — <span class="mono">amount</span>/<span class="mono">currency</span> stay at the top level).
