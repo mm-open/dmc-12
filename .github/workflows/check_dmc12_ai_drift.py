@@ -57,12 +57,13 @@ def check_top_level_doc(filename: str) -> bool:
 
 def check_default_ua_not_blocked() -> bool:
     """Probe with urllib's DEFAULT User-Agent (Python-urllib/x.y) — the inverse
-    of fetch()'s custom UA. Cloudflare Bot Fight Mode 403s this UA (error 1010),
-    silently breaking every plain-urllib agent consuming the spec. Bot Fight
-    Mode was disabled on the dmc12.ai zone 2026-06; this catches a re-enable
-    within a day. Drift detection, NOT a merge gate (this job runs on
+    of fetch()'s custom UA. Cloudflare's Browser Integrity Check 403s this UA
+    signature (error 1010; Bot Fight Mode is the sibling setting), silently
+    breaking every plain-urllib agent consuming the spec. Both were disabled
+    on the dmc12.ai zone 2026-06-10; this catches a re-enable of either within
+    a day. Drift detection, NOT a merge gate (this job runs on
     schedule/dispatch only). Set DMC12_UA_PROBE_WARN_ONLY=1 to downgrade to a
-    warning (e.g. if the zone flip is intentionally delayed)."""
+    warning (e.g. if a re-block is ever intentional)."""
     warn_only = os.environ.get('DMC12_UA_PROBE_WARN_ONLY') == '1'
     url = 'https://dmc12.ai/specification/SPEC.md'
     try:
@@ -72,8 +73,8 @@ def check_default_ua_not_blocked() -> bool:
         return True
     except urllib.error.HTTPError as e:
         if e.code == 403:
-            msg = ('Bot Fight Mode re-blocking Python agents: default urllib UA '
-                   f'got 403 from {url}')
+            msg = ('Browser Integrity Check / Bot Fight Mode re-blocking Python '
+                   f'agents: default urllib UA got 403 from {url}')
             if warn_only:
                 print(f'WARNING (DMC12_UA_PROBE_WARN_ONLY=1): {msg}')
                 return True
