@@ -58,7 +58,8 @@ capabilities publish `payment.handlers: []` until AP2 lands.
 **v0.6 (Current Release, 2026-06-10).** Reference implementation in
 production at Mark Miller Subaru Midtown (Salt Lake City, UT).
 
-Added in v0.6 — additive and non-breaking.
+Added in v0.6 — additive and non-breaking (one normative pattern
+alignment on `inventory.store_code`; see SPEC §11 v0.6.0).
 
 - `ai.dmc12.automotive.stores` → **capability 0.1.0** *(new)* — a read-only `list_stores` tool publishing the canonical name + structured address + website for each rooftop, so the `store_code` on every vehicle record resolves to a named, located dealership without guessing. Reuses the `inventory:read` scope — no new OAuth scope.
 - `merchant.locations` enrichment — each manifest location now carries `address` + `website` alongside `store_code` + `display_name` (also corrects the MMS display name from "Salt Lake" to "Midtown").

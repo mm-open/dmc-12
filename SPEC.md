@@ -317,9 +317,16 @@ v0.6 is an additive, non-breaking feature cut. Full detail in §16. In brief:
   `address` + `website` alongside `store_code` + `display_name`, drawn from the
   same source as `list_stores`. (This also corrects the reference deployment's
   MMS display name from "Salt Lake" to "Midtown".)
+- **`inventory` schema: `store_code` pattern aligned** — `^[A-Z0-9]{2,10}$` →
+  `^[A-Z]{2,6}$`, matching `stores.json` so every vehicle `store_code` is
+  guaranteed resolvable through `list_stores` (the §16.1 join guarantee). This
+  is the **one normative tightening** in the cut: a deployment using
+  digit-bearing or 7–10-character rooftop codes would need to migrate those
+  codes before adopting v0.6. No known deployment does — the reference
+  deployment uses `MMS`/`MMU`.
 
-No new scopes, no transport change, no auth change, no breaking change to any
-existing capability.
+No new scopes, no transport change, no auth change. The only contract change
+to an existing capability is the `store_code` pattern alignment above.
 
 ### v0.5.0 (2026-05-29)
 
@@ -553,8 +560,9 @@ total used to be.
 v0.6 is an additive, non-breaking cut. It publishes authoritative rooftop
 metadata so that the `store_code` carried on every vehicle record (§4.1)
 resolves to a named, located dealership instead of an opaque code an agent has
-to guess against. It adds one read tool and one manifest enrichment; no existing
-capability, scope, transport, or auth surface changes.
+to guess against. It adds one read tool and one manifest enrichment; no scope, transport,
+or auth surface changes. The single normative change to an existing
+capability is the `inventory` `store_code` pattern alignment (§11 v0.6.0).
 
 ### 16.1 New capability: `ai.dmc12.automotive.stores` (v0.1.0)
 
