@@ -153,6 +153,7 @@
         <tr><td class="fname">stocked_date</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Date the unit was stocked (ISO 8601).</td></tr>
         <tr><td class="fname">photos</td><td class="ftype">string[]</td><td><span class="badge badge-opt">optional</span></td><td>Array of image URLs; may be empty.</td></tr>
         <tr><td class="fname">description</td><td class="ftype">string</td><td><span class="badge badge-opt">optional</span></td><td>Free-text marketing/description blurb.</td></tr>
+        <tr><td class="fname">listing_url</td><td class="ftype">string (uri)</td><td><span class="badge badge-opt">optional</span></td><td>Public dealer-website VDP (vehicle detail page) URL for this vehicle when listed online; <code>null</code> when not yet published.</td></tr>
         <tr><td class="fname">similarity</td><td class="ftype">number | null</td><td><span class="badge badge-opt">optional</span></td><td>Relevance score (cosine distance, 4 dp) — present only on the <code>search_inventory</code> relevance path; <code>null</code>/absent on every structured path.</td></tr>
       </tbody>
     </table>

@@ -123,6 +123,11 @@
           "items": {"type": "string", "format": "uri"}
         },
         "description": {"type": ["string", "null"]},
+        "listing_url": {
+          "description": "Public dealer-website VDP (vehicle detail page) URL for this vehicle when listed on the dealer's site; null when not yet published online. Additive, optional field (the output schema is open).",
+          "type": ["string", "null"],
+          "format": "uri"
+        },
         "similarity": {
           "description": "Only present on search_inventory responses.",
           "type": ["number", "null"],
@@ -157,7 +162,8 @@
         "asking_price": 33985.00,
         "msrp": 34215.00,
         "status": "available",
-        "days_on_lot": 18
+        "days_on_lot": 18,
+        "listing_url": "https://www.markmillersubarumidtown.com/viewdetails/new/JF2GTHMC4P8123456/2024-subaru-outback-premium"
       }
     },
     {

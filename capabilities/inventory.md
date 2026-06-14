@@ -91,6 +91,7 @@ Schema.
 | `stocked_date` | date | no | ISO 8601 |
 | `photos` | array<string> | no | public image URLs |
 | `description` | string | no | marketing description |
+| `listing_url` | string (uri) | no | public VDP URL on the dealer website, when listed; `null` if not yet published online |
 
 Private fields (vehicle cost, hold-back, floor assist, salesperson
 assignment) MUST NOT be returned. The reference implementation maintains
